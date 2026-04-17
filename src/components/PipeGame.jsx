@@ -26,8 +26,8 @@ function coinsForCompletedLevel(levelNumber) {
 }
 
 /**
- * Kustīgie šķēršļi: katram ir path[] — secīgi lauciņi; katru soli pārvietojas uz nākamo šūnu.
- * flowOffset — ūdens vārtu atvēršana (pārmaiņus ar gatePhase).
+ * Kustīgie šķēršļi: `path[0]` (ar `pathOffset` sākotnējais indekss) = fiksēta šūna; vairs nestaigā pa path.
+ * `gatePhase` — tikai ūdens plūsmas atvērš/aizvērš (flowOffset).
  */
 const LEVEL_CONFIGS = [
   {
@@ -253,26 +253,26 @@ function isRockTile(x, y, cfg, gateRubble) {
   return cfg.staticBlocks.has(k) || gateRubble.has(k);
 }
 
-/** Šūna, kurā konkrētais šķērslis ir šajā laikā (tick = gatePhase). */
-function gateWorldPosition(mover, tick) {
+/** Fiksēta šūna: kāds path punkts kā līmenī definēts ar pathOffset (bez kustības pa ceļu). */
+function gateWorldPosition(mover) {
   const path = mover.path;
   if (!path?.length) return null;
   const len = path.length;
   const off = mover.pathOffset ?? 0;
-  const idx = ((tick + off) % len + len) % len;
+  const idx = ((off % len) + len) % len;
   return path[idx];
 }
 
-function moverAtCell(x, y, cfg, tick) {
+function moverAtCell(x, y, cfg) {
   for (const mover of cfg.movingGates) {
-    const p = gateWorldPosition(mover, tick);
+    const p = gateWorldPosition(mover);
     if (p && p.x === x && p.y === y) return mover;
   }
   return null;
 }
 
 function movingGateOpen(x, y, cfg, gatePhase) {
-  const mover = moverAtCell(x, y, cfg, gatePhase);
+  const mover = moverAtCell(x, y, cfg);
   if (!mover) return true;
   const fo = mover.flowOffset ?? mover.offset ?? 0;
   return ((gatePhase + fo) % 2) === 0;
@@ -514,7 +514,7 @@ export default function PipeGame() {
       let changed = false;
 
       for (const mover of cfg.movingGates) {
-        const p = gateWorldPosition(mover, gatePhase);
+        const p = gateWorldPosition(mover);
         if (!p) continue;
         const k = `${p.x},${p.y}`;
         if (next.has(k)) continue;
@@ -623,7 +623,7 @@ export default function PipeGame() {
       if (!selectedKind || inventory[selectedKind] <= 0) return;
 
       const key = `${x},${y}`;
-      const onLiveGate = moverAtCell(x, y, cfg, gatePhase) != null && !gateRubble.has(key);
+      const onLiveGate = moverAtCell(x, y, cfg) != null && !gateRubble.has(key);
 
       if (onLiveGate) {
         setGateRubble((prev) => new Set(prev).add(key));
@@ -644,7 +644,7 @@ export default function PipeGame() {
         [selectedKind]: inv[selectedKind] - 1,
       }));
     },
-    [cfg, gatePhase, gateRubble, grid, inventory, selectedKind],
+    [cfg, gateRubble, grid, inventory, selectedKind],
   );
 
   const runWater = useCallback(() => {
@@ -683,7 +683,7 @@ export default function PipeGame() {
       <>
         {' '}
         <strong>Šajā līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
-        <strong>kustīgie šķēršļi</strong>, kas pārvietojas pa lauciņiem (katru ~2 s soli; katram savs ceļš).
+        <strong>kustīgie šķēršļi</strong> ar propelleriem fiksētās šūnās (katru ~2 s mainās tikai vaļā/aizvērt ūdenim).
         Ja caurule nonāk uz šūnu, kur šķērslis ir šajā brīdī — tā <strong>sabrūk</strong> un šūna kļūst par
         akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa jau stāv caurule.{' '}
         <strong>Propelleri</strong> paliek šūnā ar <strong>diviem stariem</strong> (pretēji), griežas lēni; ūdens plūst tikai tad,
@@ -699,7 +699,7 @@ export default function PipeGame() {
           <span className="pipe-game__level-num">{level}. līmenis</span>
           {cfg.movingGates.length > 0 && (
             <span className="pipe-game__phase">
-              Šķēršļu solis {gatePhase} · ūdens fāze {gatePhase % 2 === 0 ? 'A' : 'B'}
+              Propelleru impulss {gatePhase} · ūdens {gatePhase % 2 === 0 ? 'A' : 'B'}
             </span>
           )}
         </div>
@@ -803,7 +803,7 @@ export default function PipeGame() {
                 );
               }
 
-              const hasMovingGate = moverAtCell(x, y, cfg, gatePhase) != null;
+              const hasMovingGate = moverAtCell(x, y, cfg) != null;
               const propBlocked = hasMovingGate && !gateOpenAt(x, y);
               const cell = grid[y][x];
 
@@ -885,7 +885,7 @@ export default function PipeGame() {
       )}
 
       <p className="pipe-game__legend" aria-hidden="true">
-        Pelēkie akmeņi neapgāžami. Propelleri klīst pa lauciņiem (2 stari); sarkans = ūdens
+        Pelēkie akmeņi neapgāžami. Propelleri fiksētās šūnās (2 stari); sarkans = ūdens
         neplūst; zaļš = vaļā. Kontakts salauž cauruli → akmenis.
       </p>
     </div>
