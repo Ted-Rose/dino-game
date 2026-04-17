@@ -2,8 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import './GnomeGame.css';
 
 const CELL = 48;
+const BASKET_VALUE = 15; // naudiņas par vienu groziņu
 
-/** Simboli: ' '=brīvs, '#'=siena, 'T'=koks, 'R'=rūķis sākums, 'H'=mājiņa, 'C'=akmeņi */
+/**
+ * Simboli: ' '=brīvs, '#'=siena, 'T'=koks, 'R'=rūķis sākums, 'H'=mājiņa
+ * baskets[] — groziņu koordinātes (uz brīvām šūnām)
+ */
 const LEVELS = [
   {
     label: '1. līmenis',
@@ -15,6 +19,10 @@ const LEVELS = [
       '#  ##  #',
       '#     H#',
       '########',
+    ],
+    baskets: [
+      { x: 4, y: 1 },
+      { x: 5, y: 3 },
     ],
   },
   {
@@ -30,6 +38,11 @@ const LEVELS = [
       '#   #### #',
       '#       H#',
       '##########',
+    ],
+    baskets: [
+      { x: 8, y: 1 },
+      { x: 7, y: 3 },
+      { x: 8, y: 5 },
     ],
   },
   {
@@ -47,6 +60,11 @@ const LEVELS = [
       '##### #### #',
       '#    #    H#',
       '############',
+    ],
+    baskets: [
+      { x: 9, y: 1 },
+      { x: 4, y: 3 },
+      { x: 8, y: 5 },
     ],
   },
   {
@@ -66,6 +84,12 @@ const LEVELS = [
       '# ######## # #',
       '#  T       #H#',
       '##############',
+    ],
+    baskets: [
+      { x: 11, y: 1 },
+      { x:  5, y: 3 },
+      { x:  5, y: 5 },
+      { x:  8, y: 9 },
     ],
   },
   {
@@ -90,6 +114,13 @@ const LEVELS = [
       '#    T       #H#',
       '################',
     ],
+    baskets: [
+      { x:  9, y:  1 },
+      { x:  5, y:  3 },
+      { x:  8, y:  5 },
+      { x:  8, y:  9 },
+      { x:  8, y: 13 },
+    ],
   },
 ];
 
@@ -98,7 +129,6 @@ function parseLevel(map) {
   let house = { x: 1, y: 1 };
   const cols = Math.max(...map.map((r) => r.length));
   const rows = map.length;
-
   const grid = map.map((row, y) =>
     Array.from({ length: cols }, (_, x) => {
       const ch = row[x] ?? '#';
@@ -117,6 +147,8 @@ function isWalkable(grid, x, y) {
   return ch === ' ' || ch === 'T';
 }
 
+function basketKey(b) { return `${b.x},${b.y}`; }
+
 /* ---- Vizuālie SVG komponenti ---- */
 
 function CellBg({ ch }) {
@@ -125,22 +157,46 @@ function CellBg({ ch }) {
   return <div className="gc-floor" />;
 }
 
+function BasketSvg() {
+  return (
+    <svg className="gc-basket" viewBox="0 0 36 36" aria-label="Groziņš">
+      {/* rokturis */}
+      <path className="gc-basket__handle" d="M10,14 Q18,2 26,14" fill="none" strokeLinecap="round" />
+      {/* grozs */}
+      <rect className="gc-basket__body" x="5" y="14" width="26" height="16" rx="4" />
+      {/* pinuma svītras */}
+      <line className="gc-basket__weave" x1="13" y1="14" x2="13" y2="30" />
+      <line className="gc-basket__weave" x1="18" y1="14" x2="18" y2="30" />
+      <line className="gc-basket__weave" x1="23" y1="14" x2="23" y2="30" />
+      <line className="gc-basket__weave" x1="5"  y1="20" x2="31" y2="20" />
+      <line className="gc-basket__weave" x1="5"  y1="25" x2="31" y2="25" />
+      {/* meža labumi — sēnīte + ola */}
+      <circle className="gc-basket__berry" cx="12" cy="12" r="3" />
+      <circle className="gc-basket__berry" cx="20" cy="10" r="3" />
+      <circle className="gc-basket__berry" cx="27" cy="12" r="2.5" />
+    </svg>
+  );
+}
+
+function CollectFlash({ collected }) {
+  if (!collected) return null;
+  return (
+    <div className="gc-collect-flash" aria-hidden="true">
+      +{BASKET_VALUE} ◉
+    </div>
+  );
+}
+
 function GnomeSvg() {
   return (
     <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Rūķītis">
-      {/* cepure */}
       <polygon className="gc-gnome__hat" points="16,1 8,18 24,18" />
       <rect className="gc-gnome__hat-band" x="8" y="16" width="16" height="3" rx="1" />
-      {/* seja */}
       <ellipse className="gc-gnome__face" cx="16" cy="23" rx="6" ry="5" />
-      {/* bārda */}
       <ellipse className="gc-gnome__beard" cx="16" cy="28" rx="7" ry="5" />
-      {/* acis */}
       <circle className="gc-gnome__eye" cx="13" cy="22" r="1.2" />
       <circle className="gc-gnome__eye" cx="19" cy="22" r="1.2" />
-      {/* deguns */}
       <ellipse className="gc-gnome__nose" cx="16" cy="25" rx="2" ry="1.4" />
-      {/* ķermenis */}
       <rect className="gc-gnome__body" x="10" y="31" width="12" height="8" rx="3" />
     </svg>
   );
@@ -149,17 +205,12 @@ function GnomeSvg() {
 function HouseSvg() {
   return (
     <svg className="gc-house" viewBox="0 0 40 40" aria-label="Mājiņa">
-      {/* sienas */}
       <rect className="gc-house__wall" x="6" y="20" width="28" height="18" rx="1" />
-      {/* jumts */}
       <polygon className="gc-house__roof" points="20,4 4,22 36,22" />
-      {/* durvis */}
       <rect className="gc-house__door" x="14" y="29" width="8" height="9" rx="2" />
-      {/* logs */}
       <rect className="gc-house__window" x="24" y="24" width="6" height="6" rx="1" />
       <line className="gc-house__cross" x1="24" y1="27" x2="30" y2="27" />
       <line className="gc-house__cross" x1="27" y1="24" x2="27" y2="30" />
-      {/* trubiņa */}
       <rect className="gc-house__chimney" x="28" y="8" width="5" height="10" rx="1" />
     </svg>
   );
@@ -173,16 +224,26 @@ const MOVES = {
   ArrowRight: { dx: 1, dy: 0 },
 };
 
+function initBaskets(levelIdx) {
+  return new Set(LEVELS[levelIdx].baskets.map(basketKey));
+}
+
 export default function GnomeGame({ onCoinsChange }) {
   const [levelIdx, setLevelIdx] = useState(0);
-  const [gnome, setGnome] = useState(() => parseLevel(LEVELS[0].map).gnome);
   const [levelData, setLevelData] = useState(() => parseLevel(LEVELS[0].map));
+  const [gnome, setGnome] = useState(() => parseLevel(LEVELS[0].map).gnome);
   const [won, setWon] = useState(false);
   const [allDone, setAllDone] = useState(false);
   const [steps, setSteps] = useState(0);
   const [earnedThisLevel, setEarnedThisLevel] = useState(false);
 
+  // groziņi
+  const [remainingBaskets, setRemainingBaskets] = useState(() => initBaskets(0));
+  const [basketsCollected, setBasketsCollected] = useState(0);
+  const [lastCollected, setLastCollected] = useState(null); // { x, y } Flash
+
   const totalLevels = LEVELS.length;
+  const totalBaskets = LEVELS[levelIdx].baskets.length;
 
   const loadLevel = useCallback((idx) => {
     const data = parseLevel(LEVELS[idx].map);
@@ -192,7 +253,17 @@ export default function GnomeGame({ onCoinsChange }) {
     setSteps(0);
     setEarnedThisLevel(false);
     setAllDone(false);
+    setRemainingBaskets(initBaskets(idx));
+    setBasketsCollected(0);
+    setLastCollected(null);
   }, []);
+
+  // Notīrīt flash pēc 0.9 s
+  useEffect(() => {
+    if (!lastCollected) return undefined;
+    const t = window.setTimeout(() => setLastCollected(null), 900);
+    return () => window.clearTimeout(t);
+  }, [lastCollected]);
 
   const tryMove = useCallback((key) => {
     if (won) return;
@@ -204,9 +275,21 @@ export default function GnomeGame({ onCoinsChange }) {
       const ny = prev.y + move.dy;
       if (!isWalkable(levelData.grid, nx, ny)) return prev;
 
-      const landed = { x: nx, y: ny };
-      const atHouse = nx === levelData.house.x && ny === levelData.house.y;
+      // groziņa savākšana
+      const k = `${nx},${ny}`;
+      if (remainingBaskets.has(k)) {
+        setRemainingBaskets((rb) => {
+          const next = new Set(rb);
+          next.delete(k);
+          return next;
+        });
+        setBasketsCollected((c) => c + 1);
+        setLastCollected({ x: nx, y: ny });
+        onCoinsChange?.(BASKET_VALUE);
+      }
 
+      // mājiņas sasniegšana
+      const atHouse = nx === levelData.house.x && ny === levelData.house.y;
       if (atHouse && !earnedThisLevel) {
         setEarnedThisLevel(true);
         setWon(true);
@@ -217,10 +300,10 @@ export default function GnomeGame({ onCoinsChange }) {
         if (levelIdx >= totalLevels - 1) setAllDone(true);
       }
 
-      return landed;
+      return { x: nx, y: ny };
     });
     setSteps((s) => s + 1);
-  }, [won, levelData, earnedThisLevel, levelIdx, totalLevels, onCoinsChange]);
+  }, [won, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, onCoinsChange]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -232,22 +315,24 @@ export default function GnomeGame({ onCoinsChange }) {
     return () => window.removeEventListener('keydown', handler);
   }, [tryMove]);
 
-  const goNext = () => {
-    const next = levelIdx + 1;
-    setLevelIdx(next);
-    loadLevel(next);
-  };
-
+  const goNext = () => { const n = levelIdx + 1; setLevelIdx(n); loadLevel(n); };
   const restart = () => loadLevel(levelIdx);
   const restartAll = () => { setLevelIdx(0); loadLevel(0); };
 
   const { grid, house, cols, rows } = levelData;
+  const basketBonus = basketsCollected * BASKET_VALUE;
 
   return (
     <div className="gnome-game">
       <div className="gnome-game__header">
         <span className="gnome-game__level-badge">{LEVELS[levelIdx].label}</span>
         <span className="gnome-game__steps">Soļi: {steps}</span>
+        <span className="gnome-game__baskets-hud" title="Savāktie groziņi">
+          🧺 {basketsCollected}/{totalBaskets}
+          {basketsCollected > 0 && (
+            <span className="gnome-game__basket-bonus"> +{basketBonus} ◉</span>
+          )}
+        </span>
         <span className="gnome-game__reward-label">
           Balva: {LEVELS[levelIdx].reward} ◉
         </span>
@@ -265,18 +350,23 @@ export default function GnomeGame({ onCoinsChange }) {
           row.map((ch, x) => {
             const isGnome = gnome.x === x && gnome.y === y;
             const isHouse = house.x === x && house.y === y;
+            const bk = `${x},${y}`;
+            const hasBasket = remainingBaskets.has(bk);
+            const justCollected = lastCollected?.x === x && lastCollected?.y === y;
             return (
-              <div key={`${x},${y}`} className="gnome-cell">
+              <div key={bk} className="gnome-cell">
                 <CellBg ch={ch} />
                 {isHouse && <HouseSvg />}
+                {hasBasket && <BasketSvg />}
                 {isGnome && <GnomeSvg />}
+                <CollectFlash collected={justCollected} />
               </div>
             );
           }),
         )}
       </div>
 
-      {/* Ekrāna bultiņas */}
+      {/* D-pad */}
       <div className="gnome-dpad" aria-label="Kustības vadība">
         <div className="gnome-dpad__row gnome-dpad__row--top">
           <button type="button" className="gnome-dpad__btn" onClick={() => tryMove('ArrowUp')} aria-label="Uz augšu">▲</button>
@@ -291,13 +381,13 @@ export default function GnomeGame({ onCoinsChange }) {
         </div>
       </div>
 
-      {/* Uzvaras paziņojums */}
+      {/* Uzvaras panelis */}
       {won && (
         <div className="gnome-game__win" role="status">
           {allDone ? (
             <>
               <p className="gnome-game__win-title">🏠 Visi līmeņi pabeigti!</p>
-              <p className="gnome-game__win-sub">Kopā nopelnīti visi apbalvojumi.</p>
+              <p className="gnome-game__win-sub">Groziņi: {basketsCollected}/{totalBaskets} · Bonuss: +{basketBonus} ◉</p>
               <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={restartAll}>
                 Spēlēt no sākuma
               </button>
@@ -305,7 +395,11 @@ export default function GnomeGame({ onCoinsChange }) {
           ) : (
             <>
               <p className="gnome-game__win-title">🏠 Rūķītis sasniedzis mājiņu!</p>
-              <p className="gnome-game__win-sub">+{LEVELS[levelIdx].reward} ◉  ·  Soļi: {steps}</p>
+              <p className="gnome-game__win-sub">
+                Balva: +{LEVELS[levelIdx].reward} ◉
+                {basketsCollected > 0 && ` · Groziņi: +${basketBonus} ◉ (${basketsCollected}/${totalBaskets})`}
+                {' · '}Soļi: {steps}
+              </p>
               <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={goNext}>
                 Nākamais līmenis →
               </button>

@@ -40,6 +40,24 @@
   border-radius: 999px;
 }
 
+.gnome-game__baskets-hud {
+  font-size: 14px;
+  font-weight: bold;
+  color: #5d4037;
+  background: linear-gradient(180deg, #fff8f0 0%, #ffe0b2 100%);
+  border: 1.5px solid #d4874a;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gnome-game__basket-bonus {
+  color: #27ae60;
+  font-size: 12px;
+}
+
 /* ===== Spēles laukums ===== */
 
 .gnome-grid {
@@ -60,6 +78,66 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ===== Groziņš ===== */
+
+.gc-basket {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  z-index: 4;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+  animation: basket-float 1.8s ease-in-out infinite;
+}
+
+@keyframes basket-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+.gc-basket__handle {
+  stroke: #8d5524;
+  stroke-width: 2.5;
+}
+
+.gc-basket__body {
+  fill: #d4a055;
+  stroke: #8d5524;
+  stroke-width: 1.2;
+}
+
+.gc-basket__weave {
+  stroke: #8d5524;
+  stroke-width: 0.9;
+  opacity: 0.55;
+}
+
+.gc-basket__berry {
+  fill: #c0392b;
+  stroke: #922b21;
+  stroke-width: 0.5;
+}
+
+/* Flash teksts kad savāc */
+.gc-collect-flash {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 12px;
+  font-weight: bold;
+  color: #27ae60;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+  animation: collect-rise 0.9s ease forwards;
+}
+
+@keyframes collect-rise {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-22px); }
 }
 
 /* ===== Šūnu foni ===== */
