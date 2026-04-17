@@ -351,18 +351,20 @@
 
 .pipe-cell--has-propeller {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  z-index: 2;
 }
 
 .pipe-cell--prop-blocked {
   filter: brightness(0.96);
 }
 
-/** Propellers pilnā šūnā; stari no centra līdz malai (~pusē lauciņa garums vienā virzienā = viena šūnas mala). */
+/** Propellers šūnā; stari 2 bloku garumā — izplešas pāri kaimiņu šūnām. */
 .propeller-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;

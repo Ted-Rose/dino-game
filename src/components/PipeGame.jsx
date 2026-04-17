@@ -425,8 +425,8 @@ function PropellerOverlay({ closed }) {
     >
       <svg className="propeller-svg" viewBox="0 0 100 100">
         <g className="propeller-svg__spin">
-          <line className="propeller-svg__ray" x1="50" y1="50" x2="50" y2="6" />
-          <line className="propeller-svg__ray" x1="50" y1="50" x2="50" y2="94" />
+          <line className="propeller-svg__ray" x1="50" y1="50" x2="50" y2="-150" />
+          <line className="propeller-svg__ray" x1="50" y1="50" x2="50" y2="250" />
         </g>
         <circle className="propeller-svg__hub" cx="50" cy="50" r="10" />
       </svg>
