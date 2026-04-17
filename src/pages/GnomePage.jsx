@@ -7,11 +7,16 @@ const SELECTED_KEY = 'gnome-selected-char';
 
 export const CHARACTERS = [
   { id: 'rukitis', label: 'Rūķītis',    price: 0,    desc: 'Mazais meža gājējs' },
+  { id: 'zakis',   label: 'Zaķis',       price: 50,   desc: 'Garajausais lēcējs' },
   { id: 'ezis',    label: 'Ezis',        price: 100,  desc: 'Dzeloņainais draugs' },
-  { id: 'vavere',  label: 'Vāvere',      price: 300,  desc: 'Žiglā riekstu ražotāja' },
-  { id: 'puce',    label: 'Pūce',        price: 700,  desc: 'Gudrā nakts gana' },
-  { id: 'lusis',   label: 'Lūsis',       price: 1500, desc: 'Mežu karaliskais sargs' },
-  { id: 'lauma',   label: 'Meža Lauma',  price: 5000, desc: 'Noslēpumainais meža gars' },
+  { id: 'lapsa',   label: 'Lapsa',       price: 300,  desc: 'Viltīgā meža blēdīte' },
+  { id: 'vavere',  label: 'Vāvere',      price: 500,  desc: 'Žiglā riekstu ražotāja' },
+  { id: 'apsis',   label: 'Āpsis',       price: 750,  desc: 'Melnbaltais mežsargs' },
+  { id: 'puce',    label: 'Pūce',        price: 1000, desc: 'Gudrā nakts gana' },
+  { id: 'lacis',   label: 'Lācis',       price: 1500, desc: 'Meža lielais saimnieks' },
+  { id: 'lusis',   label: 'Lūsis',       price: 2000, desc: 'Karaliskais plankumainais' },
+  { id: 'alnis',   label: 'Alnis',       price: 3000, desc: 'Ragainais meža milzis' },
+  { id: 'lauma',   label: 'Meža Lauma',  price: 5000, desc: 'Noslēpumainā meža ragana' },
 ];
 
 function loadCoins() {

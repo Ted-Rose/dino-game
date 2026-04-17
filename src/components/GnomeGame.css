@@ -173,6 +173,16 @@
   line-height: 1;
 }
 
+/* ===== Meža siena (koki) ===== */
+
+.gc-wall-tree {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* ===== Avatārs ===== */
 
 .gc-gnome {
@@ -363,8 +373,8 @@
 
 .gnome-shop__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 10px;
 }
 
 .gnome-shop__card {
