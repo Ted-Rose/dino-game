@@ -386,7 +386,7 @@
 
 .propeller-svg__spin {
   transform-origin: 50px 50px;
-  animation: propeller-spin 0.85s linear infinite;
+  animation: propeller-spin 2.75s linear infinite;
 }
 
 .propeller-svg__ray {

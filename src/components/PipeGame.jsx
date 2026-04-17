@@ -416,7 +416,7 @@ function RockObstacle() {
   );
 }
 
-/** Propellers viena šūnā: četri stari (~1 lauciņa garš no centra līdz malai), griežas ap centru. */
+/** Viens propelleris šūnā: 2 pretēji stari (līnija caur centru), lēna griešanās. */
 function PropellerOverlay({ closed }) {
   return (
     <div
@@ -426,9 +426,7 @@ function PropellerOverlay({ closed }) {
       <svg className="propeller-svg" viewBox="0 0 100 100">
         <g className="propeller-svg__spin">
           <line className="propeller-svg__ray" x1="50" y1="50" x2="50" y2="6" />
-          <line className="propeller-svg__ray" x1="50" y1="50" x2="94" y2="50" />
           <line className="propeller-svg__ray" x1="50" y1="50" x2="50" y2="94" />
-          <line className="propeller-svg__ray" x1="50" y1="50" x2="6" y2="50" />
         </g>
         <circle className="propeller-svg__hub" cx="50" cy="50" r="10" />
       </svg>
@@ -688,7 +686,7 @@ export default function PipeGame() {
         <strong>kustīgie šķēršļi</strong>, kas pārvietojas pa lauciņiem (katru ~2 s soli; katram savs ceļš).
         Ja caurule nonāk uz šūnu, kur šķērslis ir šajā brīdī — tā <strong>sabrūk</strong> un šūna kļūst par
         akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa jau stāv caurule.{' '}
-        <strong>Propelleri</strong> paliek šūnā; stari ir viena lauciņa garumā un griežas; ūdens plūst tikai tad,
+        <strong>Propelleri</strong> paliek šūnā ar <strong>diviem stariem</strong> (pretēji), griežas lēni; ūdens plūst tikai tad,
         kad fāze ir{' '}
         <strong>vaļā</strong> ceļam (zaļš).
       </>
@@ -887,7 +885,7 @@ export default function PipeGame() {
       )}
 
       <p className="pipe-game__legend" aria-hidden="true">
-        Pelēkie akmeņi neapgāžami. Propelleri klīst pa lauciņiem (stari viena lauciņa garumā); sarkans = ūdens
+        Pelēkie akmeņi neapgāžami. Propelleri klīst pa lauciņiem (2 stari); sarkans = ūdens
         neplūst; zaļš = vaļā. Kontakts salauž cauruli → akmenis.
       </p>
     </div>
