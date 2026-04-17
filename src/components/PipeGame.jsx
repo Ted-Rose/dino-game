@@ -20,8 +20,9 @@ const SHOP_PRICES = {
   cross: 85,
 };
 
-function randomLevelReward() {
-  return Math.floor(Math.random() * 51) + 100;
+/** Par N. līmeņa iziešanu: 50 × N (1. → 50, 2. → 100, 3. → 150, …). */
+function coinsForCompletedLevel(levelNumber) {
+  return 50 * levelNumber;
 }
 
 /**
@@ -77,6 +78,130 @@ const LEVEL_CONFIGS = [
       },
     ],
     inventory: { straight: 14, corner: 16, cross: 2 },
+  },
+  {
+    cols: 8,
+    rows: 6,
+    tap: { x: 0, y: 3 },
+    aquarium: { x: 7, y: 3 },
+    staticBlocks: new Set(['3,3', '4,3', '2,3', '5,3']),
+    movingGates: [
+      {
+        path: [
+          { x: 1, y: 2 },
+          { x: 2, y: 2 },
+          { x: 3, y: 2 },
+          { x: 4, y: 2 },
+          { x: 5, y: 2 },
+          { x: 6, y: 2 },
+          { x: 5, y: 2 },
+          { x: 4, y: 2 },
+          { x: 3, y: 2 },
+          { x: 2, y: 2 },
+        ],
+        pathOffset: 1,
+        flowOffset: 0,
+      },
+      {
+        path: [
+          { x: 6, y: 5 },
+          { x: 6, y: 4 },
+          { x: 5, y: 4 },
+          { x: 5, y: 5 },
+          { x: 6, y: 5 },
+        ],
+        pathOffset: 0,
+        flowOffset: 1,
+      },
+    ],
+    inventory: { straight: 16, corner: 18, cross: 3 },
+  },
+  {
+    cols: 8,
+    rows: 6,
+    tap: { x: 0, y: 3 },
+    aquarium: { x: 7, y: 3 },
+    staticBlocks: new Set(['3,3', '4,3', '2,3', '5,3', '3,2', '4,2']),
+    movingGates: [
+      {
+        path: [
+          { x: 1, y: 5 },
+          { x: 2, y: 5 },
+          { x: 3, y: 5 },
+          { x: 4, y: 5 },
+          { x: 5, y: 5 },
+          { x: 6, y: 5 },
+          { x: 5, y: 5 },
+          { x: 4, y: 5 },
+          { x: 3, y: 5 },
+          { x: 2, y: 5 },
+        ],
+        pathOffset: 0,
+        flowOffset: 0,
+      },
+      {
+        path: [
+          { x: 1, y: 1 },
+          { x: 1, y: 2 },
+          { x: 1, y: 3 },
+          { x: 1, y: 4 },
+          { x: 1, y: 5 },
+        ],
+        pathOffset: 2,
+        flowOffset: 1,
+      },
+      {
+        path: [
+          { x: 6, y: 1 },
+          { x: 6, y: 2 },
+          { x: 6, y: 3 },
+          { x: 6, y: 4 },
+          { x: 6, y: 5 },
+        ],
+        pathOffset: 1,
+        flowOffset: 0,
+      },
+    ],
+    inventory: { straight: 18, corner: 20, cross: 4 },
+  },
+  {
+    cols: 8,
+    rows: 6,
+    tap: { x: 0, y: 3 },
+    aquarium: { x: 7, y: 3 },
+    staticBlocks: new Set(['3,3', '4,3', '2,3', '5,3', '3,2', '4,2', '2,5', '5,5']),
+    movingGates: [
+      {
+        path: [
+          { x: 3, y: 5 },
+          { x: 4, y: 5 },
+          { x: 3, y: 5 },
+        ],
+        pathOffset: 0,
+        flowOffset: 0,
+      },
+      {
+        path: [
+          { x: 1, y: 1 },
+          { x: 1, y: 2 },
+          { x: 1, y: 3 },
+          { x: 1, y: 4 },
+        ],
+        pathOffset: 0,
+        flowOffset: 1,
+      },
+      {
+        path: [
+          { x: 6, y: 1 },
+          { x: 6, y: 2 },
+          { x: 6, y: 3 },
+          { x: 6, y: 4 },
+        ],
+        pathOffset: 2,
+        flowOffset: 0,
+      },
+    ],
+    inventory: { straight: 20, corner: 22, cross: 5 },
   },
 ];
 
@@ -540,7 +665,7 @@ export default function PipeGame() {
       setAllComplete(true);
     }
     if (!coinsEarnedLockedRef.current) {
-      const gain = randomLevelReward();
+      const gain = coinsForCompletedLevel(level);
       coinsEarnedLockedRef.current = true;
       setCoins((c) => c + gain);
       setRewardFlash(gain);
@@ -552,16 +677,15 @@ export default function PipeGame() {
     [cfg, gatePhase],
   );
 
-  const introLevel2 =
-    level === 2 ? (
+  const introMoving =
+    cfg.movingGates.length > 0 ? (
       <>
         {' '}
-        <strong>2. līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
-        <strong>kustīgie šķēršļi</strong> pārvietojas pa norādītajiem lauciņiem (katru ~2 s soli) — katram
-        savs ceļš. Ja caurule nonāk uz šūnu, kur šķērslis ir šajā brīdī — tā <strong>sabrūk</strong> un
-        šūna kļūst par nekustīgu akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa
-        jau stāv caurule. Griežot ūdeni, ūdens plūst tikai tad, kad vārti šūnā ir{' '}
-        <strong>atvērti</strong> (zaļš).
+        <strong>Šajā līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
+        <strong>kustīgie šķēršļi</strong>, kas pārvietojas pa lauciņiem (katru ~2 s soli; katram savs ceļš).
+        Ja caurule nonāk uz šūnu, kur šķērslis ir šajā brīdī — tā <strong>sabrūk</strong> un šūna kļūst par
+        akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa jau stāv caurule. Ūdens plūst
+        tikai tad, kad vārti šūnā ir <strong>atvērti</strong> (zaļš).
       </>
     ) : null;
 
@@ -587,15 +711,15 @@ export default function PipeGame() {
 
       {rewardFlash != null && (
         <p className="pipe-game__reward-toast" role="status">
-          +{rewardFlash} naudiņas par līmeni!
+          +{rewardFlash} naudiņas par {level}. līmeni!
         </p>
       )}
 
       <p className="pipe-game__intro">
-        Savieno caurules no krāna līdz akvārijam. Par katru līmeni pareizi novestu ūdeni saņem{' '}
-        <strong>100–150 naudiņas</strong>; tās vari tērēt <strong>veikalā</strong>, lai nopirktu papildu
-        caurules. Instrumentu plauktā izvēlies daļas, klikšķini tukšā lauciņā; vēlreiz klikšķini uz
-        caurules, lai grieztu (krusta forma negriežas). Labais klikšķis — noņemt.{introLevel2}
+        Savieno caurules no krāna līdz akvārijam. Par katru pareizi izietu līmeni nauda ir{' '}
+        <strong>50 × līmeņa numurs</strong> (1. līmenis → 50 ◉, 2. → 100 ◉, 3. → 150 ◉ utt.); to vari tērēt{' '}
+        <strong>veikalā</strong> papildu caurulēm. Instrumentu plauktā izvēlies daļas, klikšķini tukšā lauciņā; vēlreiz klikšķini uz
+        caurules, lai grieztu (krusta forma negriežas). Labais klikšķis — noņemt.{introMoving}
       </p>
 
       <div className="pipe-game__shop" aria-label="Veikals">
