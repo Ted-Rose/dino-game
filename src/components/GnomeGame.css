@@ -1,0 +1,281 @@
+.gnome-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding-bottom: 32px;
+}
+
+.gnome-game__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.gnome-game__level-badge {
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+  letter-spacing: 0.04em;
+}
+
+.gnome-game__steps {
+  font-size: 14px;
+  color: #555;
+  background: #ececec;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.gnome-game__reward-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #8a6910;
+  background: linear-gradient(180deg, #fff8e7 0%, #f0e0b8 100%);
+  border: 1.5px solid #c9a227;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+/* ===== Spēles laukums ===== */
+
+.gnome-grid {
+  display: grid;
+  gap: 0;
+  border: 3px solid #4a3728;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.gnome-cell {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Šūnu foni ===== */
+
+.gc-wall {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, #6b5043, #3d2a1e);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.gc-floor {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #d4b483,
+    #d4b483 8px,
+    #c8a873 8px,
+    #c8a873 16px
+  );
+  background-size: 16px 8px;
+}
+
+.gc-tree {
+  position: absolute;
+  inset: 0;
+  background: #a8c476;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* ===== Rūķītis ===== */
+
+.gc-gnome {
+  position: absolute;
+  width: 30px;
+  height: 38px;
+  z-index: 10;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.gc-gnome__hat {
+  fill: #c0392b;
+}
+
+.gc-gnome__hat-band {
+  fill: #922b21;
+}
+
+.gc-gnome__face {
+  fill: #f5cba7;
+}
+
+.gc-gnome__beard {
+  fill: #ecf0f1;
+}
+
+.gc-gnome__eye {
+  fill: #2c3e50;
+}
+
+.gc-gnome__nose {
+  fill: #e8a87c;
+}
+
+.gc-gnome__body {
+  fill: #27ae60;
+}
+
+/* ===== Mājiņa ===== */
+
+.gc-house {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  z-index: 5;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.gc-house__wall {
+  fill: #f5cba7;
+  stroke: #d4a072;
+  stroke-width: 1;
+}
+
+.gc-house__roof {
+  fill: #c0392b;
+  stroke: #922b21;
+  stroke-width: 1;
+}
+
+.gc-house__door {
+  fill: #8b5e3c;
+  stroke: #6b4226;
+  stroke-width: 0.8;
+}
+
+.gc-house__window {
+  fill: #aed6f1;
+  stroke: #7fb3d3;
+  stroke-width: 0.8;
+}
+
+.gc-house__cross {
+  stroke: #7fb3d3;
+  stroke-width: 0.8;
+}
+
+.gc-house__chimney {
+  fill: #c0392b;
+  stroke: #922b21;
+  stroke-width: 0.8;
+}
+
+/* ===== Ekrāna D-pad ===== */
+
+.gnome-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.gnome-dpad__row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.gnome-dpad__btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  border: 2px solid #7a6352;
+  background: linear-gradient(180deg, #f0e8de 0%, #d8c9b8 100%);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3d2a1e;
+  box-shadow: 0 3px 0 #b0957f, 0 4px 6px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+  font-family: inherit;
+}
+
+.gnome-dpad__btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #b0957f, 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gnome-dpad__btn--center {
+  font-size: 18px;
+  background: linear-gradient(180deg, #f5e6d0 0%, #e0c9a8 100%);
+  color: #7a6352;
+}
+
+/* ===== Uzvaras panelis ===== */
+
+.gnome-game__win {
+  text-align: center;
+  background: linear-gradient(180deg, #eafaf1 0%, #d5f5e3 100%);
+  border: 2px solid #82e0aa;
+  border-radius: 14px;
+  padding: 18px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: gnome-win-pop 0.35s ease;
+}
+
+@keyframes gnome-win-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.gnome-game__win-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: #1e6b3a;
+}
+
+.gnome-game__win-sub {
+  margin: 0;
+  font-size: 14px;
+  color: #2e7d52;
+}
+
+.gnome-game__btn {
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 2px solid #888;
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #333;
+}
+
+.gnome-game__btn--primary {
+  border-color: #27ae60;
+  background: #27ae60;
+  color: #fff;
+}
+
+.gnome-game__btn--primary:hover {
+  background: #1e8449;
+  border-color: #1e8449;
+}
