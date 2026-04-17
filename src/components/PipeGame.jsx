@@ -92,8 +92,9 @@ function isFixedCell(x, y, cfg) {
   return isTap(x, y, cfg) || isAquarium(x, y, cfg);
 }
 
-function isStaticRock(x, y, cfg) {
-  return cfg.staticBlocks.has(`${x},${y}`);
+function isRockTile(x, y, cfg, gateRubble) {
+  const k = `${x},${y}`;
+  return cfg.staticBlocks.has(k) || gateRubble.has(k);
 }
 
 function movingGateOpen(x, y, cfg, gatePhase) {
@@ -102,31 +103,31 @@ function movingGateOpen(x, y, cfg, gatePhase) {
   return ((gatePhase + g.offset) % 2) === 0;
 }
 
-function cellOpenings(x, y, grid, cfg, gatePhase) {
+function cellOpenings(x, y, grid, cfg, gatePhase, gateRubble) {
   if (isTap(x, y, cfg)) return ['E'];
   if (isAquarium(x, y, cfg)) return ['W'];
-  if (isStaticRock(x, y, cfg)) return [];
+  if (isRockTile(x, y, cfg, gateRubble)) return [];
   if (!movingGateOpen(x, y, cfg, gatePhase)) return [];
   const cell = grid[y][x];
   if (!cell) return [];
   return openingsFor(cell.kind, cell.rot);
 }
 
-function buildNeighbors(x, y, grid, cfg, gatePhase) {
+function buildNeighbors(x, y, grid, cfg, gatePhase, gateRubble) {
   const next = [];
-  for (const d of cellOpenings(x, y, grid, cfg, gatePhase)) {
+  for (const d of cellOpenings(x, y, grid, cfg, gatePhase, gateRubble)) {
     const [dx, dy] = DIR[d];
     const nx = x + dx;
     const ny = y + dy;
     if (nx < 0 || nx >= cfg.cols || ny < 0 || ny >= cfg.rows) continue;
     const back = OPP[d];
-    if (!cellOpenings(nx, ny, grid, cfg, gatePhase).includes(back)) continue;
+    if (!cellOpenings(nx, ny, grid, cfg, gatePhase, gateRubble).includes(back)) continue;
     next.push([nx, ny]);
   }
   return next;
 }
 
-function findReachable(grid, cfg, gatePhase) {
+function findReachable(grid, cfg, gatePhase, gateRubble) {
   const start = `${cfg.tap.x},${cfg.tap.y}`;
   const visited = new Set([start]);
   const parent = new Map([[start, null]]);
@@ -142,7 +143,7 @@ function findReachable(grid, cfg, gatePhase) {
       }
       return { ok: true, pathCells };
     }
-    for (const [nx, ny] of buildNeighbors(x, y, grid, cfg, gatePhase)) {
+    for (const [nx, ny] of buildNeighbors(x, y, grid, cfg, gatePhase, gateRubble)) {
       const nk = `${nx},${ny}`;
       if (visited.has(nk)) continue;
       visited.add(nk);
@@ -282,6 +283,8 @@ export default function PipeGame() {
   const [coins, setCoins] = useState(loadStoredCoins);
   const [rewardFlash, setRewardFlash] = useState(null);
   const coinsEarnedLockedRef = useRef(false);
+  const [gateRubble, setGateRubble] = useState(() => new Set());
+  const gridRef = useRef(grid);
 
   const applyLevelConfig = useCallback((nextLevel) => {
     const c = LEVEL_CONFIGS[nextLevel - 1];
@@ -294,6 +297,7 @@ export default function PipeGame() {
     setFlowing(false);
     setPathCells(new Set());
     setGatePhase(0);
+    setGateRubble(new Set());
     setAllComplete(false);
     coinsEarnedLockedRef.current = false;
   }, []);
@@ -313,6 +317,10 @@ export default function PipeGame() {
   }, [rewardFlash]);
 
   useEffect(() => {
+    gridRef.current = grid;
+  }, [grid]);
+
+  useEffect(() => {
     if (!cfg.movingGates.length) return undefined;
     const id = window.setInterval(() => {
       setGatePhase((p) => p + 1);
@@ -320,9 +328,43 @@ export default function PipeGame() {
     return () => window.clearInterval(id);
   }, [cfg.movingGates.length, level]);
 
+  /** Kad mainās vārtu fāze, jebkura caurule uz kustīgā šķērsla šūnas sabrūk → akmeņu šķērslis. */
+  useEffect(() => {
+    if (!cfg.movingGates.length) return;
+
+    setGateRubble((prevRubble) => {
+      const copy = gridRef.current.map((row) => row.map((c) => c));
+      const next = new Set(prevRubble);
+      let changed = false;
+
+      for (const gate of cfg.movingGates) {
+        const k = `${gate.x},${gate.y}`;
+        if (next.has(k)) continue;
+        if (copy[gate.y][gate.x]) {
+          copy[gate.y][gate.x] = null;
+          next.add(k);
+          changed = true;
+        }
+      }
+
+      if (!changed) return prevRubble;
+
+      queueMicrotask(() => {
+        setGrid(copy);
+        setSuccess(false);
+        setFlowing(false);
+        setPathCells(new Set());
+        setAllComplete(false);
+        coinsEarnedLockedRef.current = false;
+      });
+
+      return next;
+    });
+  }, [gatePhase, cfg.movingGates]);
+
   const reachable = useMemo(
-    () => findReachable(grid, cfg, gatePhase),
-    [grid, cfg, gatePhase],
+    () => findReachable(grid, cfg, gatePhase, gateRubble),
+    [grid, cfg, gatePhase, gateRubble],
   );
 
   const resetCurrentLevel = useCallback(() => {
@@ -333,6 +375,7 @@ export default function PipeGame() {
     setSuccess(false);
     setFlowing(false);
     setPathCells(new Set());
+    setGateRubble(new Set());
     setAllComplete(false);
     coinsEarnedLockedRef.current = false;
   }, [cfg]);
@@ -363,7 +406,7 @@ export default function PipeGame() {
   const handleCellPointerDown = useCallback(
     (x, y, event) => {
       if (isFixedCell(x, y, cfg)) return;
-      if (isStaticRock(x, y, cfg)) return;
+      if (isRockTile(x, y, cfg, gateRubble)) return;
 
       setError('');
       setSuccess(false);
@@ -401,6 +444,20 @@ export default function PipeGame() {
 
       if (!selectedKind || inventory[selectedKind] <= 0) return;
 
+      const key = `${x},${y}`;
+      const onLiveGate =
+        cfg.movingGates.some((g) => g.x === x && g.y === y) &&
+        !gateRubble.has(key);
+
+      if (onLiveGate) {
+        setGateRubble((prev) => new Set(prev).add(key));
+        setInventory((inv) => ({
+          ...inv,
+          [selectedKind]: inv[selectedKind] - 1,
+        }));
+        return;
+      }
+
       setGrid((g) => {
         const copy = g.map((row) => row.slice());
         copy[y][x] = { kind: selectedKind, rot: 0 };
@@ -411,11 +468,11 @@ export default function PipeGame() {
         [selectedKind]: inv[selectedKind] - 1,
       }));
     },
-    [cfg, grid, inventory, selectedKind],
+    [cfg, gateRubble, grid, inventory, selectedKind],
   );
 
   const runWater = useCallback(() => {
-    const { ok, pathCells: cells } = findReachable(grid, cfg, gatePhase);
+    const { ok, pathCells: cells } = findReachable(grid, cfg, gatePhase, gateRubble);
     if (!ok) {
       setError(
         'Ceļš nav gatavs vai kustīgais šķērslis šobrīd bloķē. Pārbaudi vārtu fāzi un caurules.',
@@ -438,7 +495,7 @@ export default function PipeGame() {
       setCoins((c) => c + gain);
       setRewardFlash(gain);
     }
-  }, [grid, cfg, gatePhase, level, maxLevel]);
+  }, [grid, cfg, gatePhase, gateRubble, level, maxLevel]);
 
   const gateOpenAt = useCallback(
     (x, y) => movingGateOpen(x, y, cfg, gatePhase),
@@ -451,8 +508,10 @@ export default function PipeGame() {
         {' '}
         <strong>2. līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
         <strong>kustīgi vārti</strong> (mainās aptuveni ik pēc 2 s — dažādās šūnās dažādās fāzēs).
-        Griežot ūdeni, ūdens caur kustīgo šķērsli šķērso tikai tad, kad vārti ir{' '}
-        <strong>atvērti</strong> (zaļā mirdzējums).
+        Ja caurule nonāk uz šūnu ar kustīgiem vārtiem — tā <strong>sabrūk</strong> un šūna kļūst par
+        nekustīgu akmeni (daļa zaudēta). Katru vārtu fāzes maiņu tas pats notiek ar jebkuru cauruli uz
+        vārtu lauciņa. Griežot ūdeni, ūdens plūst tikai tad, kad vārti ir{' '}
+        <strong>atvērti</strong> (zaļš).
       </>
     ) : null;
 
@@ -557,7 +616,7 @@ export default function PipeGame() {
                   </div>
                 );
               }
-              if (isStaticRock(x, y, cfg)) {
+              if (isRockTile(x, y, cfg, gateRubble)) {
                 return (
                   <div key={key} className="pipe-cell pipe-cell--rock">
                     <RockObstacle />
@@ -647,7 +706,8 @@ export default function PipeGame() {
       )}
 
       <p className="pipe-game__legend" aria-hidden="true">
-        Pelēkie akmeņi neapgāžami. Vārti — sarkans = aizvērts, zaļš = vaļā ūdens plūsmai.
+        Pelēkie akmeņi neapgāžami. Kustīgie vārti: sarkans = ūdens neplūst; zaļš = vaļā. Kontakts ar
+        vārtiem salauž cauruli → paliek akmenis.
       </p>
     </div>
   );
