@@ -66,6 +66,8 @@ export default function DinoGame() {
       over: false,
       lives: INITIAL_LIVES,
       invincibleTimer: 0,
+      lastLifeBonusScore: 0,
+      lifeNotice: { timer: 0, y: 0 },
     };
     stateRef.current = initialState;
   }, []);
@@ -197,6 +199,22 @@ export default function DinoGame() {
 
       state.score += dt * 0.15;
       setScore(Math.floor(state.score));
+
+      const currentMilestone = Math.floor(state.score / 100);
+      const lastMilestone = Math.floor(state.lastLifeBonusScore / 100);
+      if (currentMilestone > lastMilestone) {
+        state.lastLifeBonusScore = currentMilestone * 100;
+        if (state.lives < INITIAL_LIVES) {
+          state.lives += 1;
+          setLives(state.lives);
+          state.lifeNotice = { timer: 60, y: 0 };
+        }
+      }
+
+      if (state.lifeNotice.timer > 0) {
+        state.lifeNotice.timer = Math.max(0, state.lifeNotice.timer - dt);
+        state.lifeNotice.y += dt * 0.5;
+      }
 
       state.nightTimer += dt;
       if (state.nightTimer > 700) {
@@ -389,6 +407,24 @@ export default function DinoGame() {
       }
     };
 
+    const drawLifeNotice = () => {
+      if (state.lifeNotice.timer <= 0) return;
+      const alpha = Math.min(1, state.lifeNotice.timer / 30);
+      const color = state.night ? '#ff9b9b' : '#e74c3c';
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.font = 'bold 18px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        '+1 DZIVIBA',
+        state.dino.x + DINO.width / 2,
+        state.dino.y - 10 - state.lifeNotice.y,
+      );
+      ctx.restore();
+      ctx.textAlign = 'left';
+    };
+
     const drawScore = () => {
       const fg = state.night ? '#f7f7f7' : '#535353';
       ctx.fillStyle = fg;
@@ -432,6 +468,7 @@ export default function DinoGame() {
       drawDino();
       drawScore();
       drawLives();
+      drawLifeNotice();
 
       if (state.over) drawGameOver();
       else if (!state.running) drawStartScreen();
@@ -469,6 +506,8 @@ export default function DinoGame() {
       state.running = true;
       state.lives = INITIAL_LIVES;
       state.invincibleTimer = 0;
+      state.lastLifeBonusScore = 0;
+      state.lifeNotice = { timer: 0, y: 0 };
       setScore(0);
       setLives(INITIAL_LIVES);
       setGameOver(false);
