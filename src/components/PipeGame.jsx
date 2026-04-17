@@ -24,7 +24,10 @@ function randomLevelReward() {
   return Math.floor(Math.random() * 51) + 100;
 }
 
-/** Līmeņi: statiskie akmeņi; kustīgie vārti apmaina atvērtu/aizvērtu pēc fāzes (dažādi offset). */
+/**
+ * Kustīgie šķēršļi: katram ir path[] — secīgi lauciņi; katru soli pārvietojas uz nākamo šūnu.
+ * flowOffset — ūdens vārtu atvēršana (pārmaiņus ar gatePhase).
+ */
 const LEVEL_CONFIGS = [
   {
     cols: 8,
@@ -42,8 +45,36 @@ const LEVEL_CONFIGS = [
     aquarium: { x: 7, y: 3 },
     staticBlocks: new Set(['3,3', '4,3']),
     movingGates: [
-      { x: 2, y: 2, offset: 0 },
-      { x: 5, y: 4, offset: 1 },
+      {
+        path: [
+          { x: 1, y: 2 },
+          { x: 2, y: 2 },
+          { x: 3, y: 2 },
+          { x: 4, y: 2 },
+          { x: 5, y: 2 },
+          { x: 6, y: 2 },
+          { x: 5, y: 2 },
+          { x: 4, y: 2 },
+          { x: 3, y: 2 },
+          { x: 2, y: 2 },
+        ],
+        pathOffset: 0,
+        flowOffset: 0,
+      },
+      {
+        path: [
+          { x: 6, y: 5 },
+          { x: 6, y: 4 },
+          { x: 6, y: 3 },
+          { x: 6, y: 2 },
+          { x: 5, y: 3 },
+          { x: 5, y: 4 },
+          { x: 5, y: 5 },
+          { x: 6, y: 5 },
+        ],
+        pathOffset: 3,
+        flowOffset: 1,
+      },
     ],
     inventory: { straight: 14, corner: 16, cross: 2 },
   },
@@ -97,10 +128,29 @@ function isRockTile(x, y, cfg, gateRubble) {
   return cfg.staticBlocks.has(k) || gateRubble.has(k);
 }
 
+/** Šūna, kurā konkrētais šķērslis ir šajā laikā (tick = gatePhase). */
+function gateWorldPosition(mover, tick) {
+  const path = mover.path;
+  if (!path?.length) return null;
+  const len = path.length;
+  const off = mover.pathOffset ?? 0;
+  const idx = ((tick + off) % len + len) % len;
+  return path[idx];
+}
+
+function moverAtCell(x, y, cfg, tick) {
+  for (const mover of cfg.movingGates) {
+    const p = gateWorldPosition(mover, tick);
+    if (p && p.x === x && p.y === y) return mover;
+  }
+  return null;
+}
+
 function movingGateOpen(x, y, cfg, gatePhase) {
-  const g = cfg.movingGates.find((o) => o.x === x && o.y === y);
-  if (!g) return true;
-  return ((gatePhase + g.offset) % 2) === 0;
+  const mover = moverAtCell(x, y, cfg, gatePhase);
+  if (!mover) return true;
+  const fo = mover.flowOffset ?? mover.offset ?? 0;
+  return ((gatePhase + fo) % 2) === 0;
 }
 
 function cellOpenings(x, y, grid, cfg, gatePhase, gateRubble) {
@@ -337,11 +387,13 @@ export default function PipeGame() {
       const next = new Set(prevRubble);
       let changed = false;
 
-      for (const gate of cfg.movingGates) {
-        const k = `${gate.x},${gate.y}`;
+      for (const mover of cfg.movingGates) {
+        const p = gateWorldPosition(mover, gatePhase);
+        if (!p) continue;
+        const k = `${p.x},${p.y}`;
         if (next.has(k)) continue;
-        if (copy[gate.y][gate.x]) {
-          copy[gate.y][gate.x] = null;
+        if (copy[p.y][p.x]) {
+          copy[p.y][p.x] = null;
           next.add(k);
           changed = true;
         }
@@ -445,9 +497,7 @@ export default function PipeGame() {
       if (!selectedKind || inventory[selectedKind] <= 0) return;
 
       const key = `${x},${y}`;
-      const onLiveGate =
-        cfg.movingGates.some((g) => g.x === x && g.y === y) &&
-        !gateRubble.has(key);
+      const onLiveGate = moverAtCell(x, y, cfg, gatePhase) != null && !gateRubble.has(key);
 
       if (onLiveGate) {
         setGateRubble((prev) => new Set(prev).add(key));
@@ -468,7 +518,7 @@ export default function PipeGame() {
         [selectedKind]: inv[selectedKind] - 1,
       }));
     },
-    [cfg, gateRubble, grid, inventory, selectedKind],
+    [cfg, gatePhase, gateRubble, grid, inventory, selectedKind],
   );
 
   const runWater = useCallback(() => {
@@ -507,10 +557,10 @@ export default function PipeGame() {
       <>
         {' '}
         <strong>2. līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
-        <strong>kustīgi vārti</strong> (mainās aptuveni ik pēc 2 s — dažādās šūnās dažādās fāzēs).
-        Ja caurule nonāk uz šūnu ar kustīgiem vārtiem — tā <strong>sabrūk</strong> un šūna kļūst par
-        nekustīgu akmeni (daļa zaudēta). Katru vārtu fāzes maiņu tas pats notiek ar jebkuru cauruli uz
-        vārtu lauciņa. Griežot ūdeni, ūdens plūst tikai tad, kad vārti ir{' '}
+        <strong>kustīgie šķēršļi</strong> pārvietojas pa norādītajiem lauciņiem (katru ~2 s soli) — katram
+        savs ceļš. Ja caurule nonāk uz šūnu, kur šķērslis ir šajā brīdī — tā <strong>sabrūk</strong> un
+        šūna kļūst par nekustīgu akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa
+        jau stāv caurule. Griežot ūdeni, ūdens plūst tikai tad, kad vārti šūnā ir{' '}
         <strong>atvērti</strong> (zaļš).
       </>
     ) : null;
@@ -521,7 +571,9 @@ export default function PipeGame() {
         <div className="pipe-game__level-badge" aria-live="polite">
           <span className="pipe-game__level-num">{level}. līmenis</span>
           {cfg.movingGates.length > 0 && (
-            <span className="pipe-game__phase">Vārtu fāze: {gatePhase % 2 === 0 ? 'A' : 'B'}</span>
+            <span className="pipe-game__phase">
+              Šķēršļu solis {gatePhase} · ūdens fāze {gatePhase % 2 === 0 ? 'A' : 'B'}
+            </span>
           )}
         </div>
         <div className="pipe-game__wallet" title="Naudiņas">
@@ -624,7 +676,7 @@ export default function PipeGame() {
                 );
               }
 
-              const hasMovingGate = cfg.movingGates.some((g) => g.x === x && g.y === y);
+              const hasMovingGate = moverAtCell(x, y, cfg, gatePhase) != null;
               const gateClosed = hasMovingGate && !gateOpenAt(x, y);
               const cell = grid[y][x];
 
@@ -706,8 +758,8 @@ export default function PipeGame() {
       )}
 
       <p className="pipe-game__legend" aria-hidden="true">
-        Pelēkie akmeņi neapgāžami. Kustīgie vārti: sarkans = ūdens neplūst; zaļš = vaļā. Kontakts ar
-        vārtiem salauž cauruli → paliek akmenis.
+        Pelēkie akmeņi neapgāžami. Šķēršļi klīst pa lauciņiem; sarkans = ūdens neplūst; zaļš = vaļā.
+        Kontakts salauž cauruli → akmenis.
       </p>
     </div>
   );
