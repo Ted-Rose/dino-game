@@ -612,3 +612,272 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ===== LAVA WORLD THEME ===== */
+
+.page-gnome--lava {
+  background: radial-gradient(ellipse at 50% 20%, #2d0a00 0%, #120000 100%);
+  min-height: 100vh;
+}
+
+.gnome-page__topbar--lava {
+  background: linear-gradient(180deg, #7b1a00 0%, #4a0e00 100%);
+  border-bottom: 2px solid #c0391b;
+}
+
+.gnome-page__topbar--lava h1 {
+  color: #ff8c00;
+  text-shadow: 0 0 12px rgba(255, 87, 34, 0.7);
+}
+
+.gnome-shop--lava {
+  background: linear-gradient(180deg, #2d0a00 0%, #1a0500 100%);
+  border: 2px solid #c0391b;
+  border-radius: 14px;
+  margin: 0 auto 16px;
+  max-width: 900px;
+  padding: 18px 20px;
+}
+
+.gnome-shop--lava .gnome-shop__title {
+  color: #ff8c00;
+}
+
+.gnome-shop--lava .gnome-shop__subtitle {
+  color: #a04020;
+}
+
+.gnome-shop--lava .gnome-shop__card {
+  background: #1a0800;
+  border: 1.5px solid #5a1a00;
+}
+
+.gnome-shop--lava .gnome-shop__card--selected {
+  border-color: #ff5722;
+  box-shadow: 0 0 10px rgba(255, 87, 34, 0.4);
+}
+
+.gnome-shop--lava .gnome-shop__name { color: #ff8c00; }
+.gnome-shop--lava .gnome-shop__desc { color: #8a4020; }
+
+.gnome-page__shop-btn--lava {
+  background: linear-gradient(180deg, #c0391b 0%, #7b1a00 100%);
+  border-color: #ff5722;
+  color: #fff;
+}
+
+.gnome-page__shop-btn--lava:hover {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0391b 100%);
+}
+
+.gnome-game--lava {
+  background: transparent;
+}
+
+.gnome-grid--lava {
+  border: 3px solid #7b1a00;
+  box-shadow: 0 0 24px rgba(192, 57, 27, 0.5);
+}
+
+.gc-floor--lava {
+  background: radial-gradient(circle at 50% 100%, #3d1200 0%, #1a0500 100%);
+  background-size: 100% 100%;
+  box-shadow: inset 0 -1px 0 rgba(255, 140, 0, 0.12);
+}
+
+.gnome-dpad--lava .gnome-game__btn {
+  border-color: #c0391b;
+  background: linear-gradient(180deg, #7b1a00 0%, #4a0e00 100%);
+  color: #ff8c00;
+}
+
+.gnome-dpad--lava .gnome-game__btn:hover {
+  background: linear-gradient(180deg, #c0391b 0%, #7b1a00 100%);
+}
+
+.gnome-game__win--lava {
+  background: linear-gradient(160deg, #2d0a00 0%, #1a0000 100%);
+  border: 2px solid #c0391b;
+  box-shadow: 0 0 30px rgba(192, 57, 27, 0.5);
+}
+
+.gnome-game__win--lava .gnome-game__win-title { color: #ff8c00; }
+.gnome-game__win--lava .gnome-game__win-sub   { color: #a05030; }
+
+.gnome-game__btn--lava {
+  border-color: #ff5722;
+  background: linear-gradient(180deg, #c0391b 0%, #7b1a00 100%);
+  color: #ffe082;
+}
+
+.gnome-game__btn--lava:hover {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0391b 100%);
+}
+
+/* ===== READY TO FIGHT SCREEN ===== */
+
+.ready-fight {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 50%, #1a0000 0%, #000 100%);
+  padding: 24px;
+}
+
+.ready-fight__stone {
+  position: relative;
+  background: radial-gradient(ellipse at 50% 40%, #2d1200 0%, #1a0000 60%, #0d0000 100%);
+  border: 3px solid #c0391b;
+  border-radius: 18px;
+  box-shadow: 0 0 50px rgba(192, 57, 27, 0.5), inset 0 0 40px rgba(0,0,0,0.6);
+  padding: 52px 60px 80px;
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+}
+
+.ready-fight__text {
+  margin: 0 0 48px;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ff5722;
+  text-shadow:
+    0 0 8px #ff5722,
+    0 0 20px rgba(255, 87, 34, 0.6),
+    0 0 40px rgba(255, 87, 34, 0.3);
+  line-height: 1.3;
+}
+
+.ready-fight__btns {
+  position: relative;
+  min-height: 90px;
+  display: flex;
+  justify-content: center;
+}
+
+.ready-fight__yes {
+  padding: 14px 42px;
+  border-radius: 12px;
+  border: 2px solid #ff5722;
+  background: linear-gradient(180deg, #c0391b 0%, #7b1a00 100%);
+  color: #ffe082;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 2px;
+  box-shadow: 0 0 16px rgba(192, 57, 27, 0.6);
+  transition: background 0.15s, box-shadow 0.15s;
+  align-self: flex-end;
+}
+
+.ready-fight__yes:hover {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0391b 100%);
+  box-shadow: 0 0 28px rgba(231, 76, 60, 0.8);
+}
+
+.ready-fight__no {
+  padding: 10px 26px;
+  border-radius: 10px;
+  border: 2px solid #555;
+  background: #333;
+  color: #888;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: left 0.25s ease, top 0.25s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ===== FIGHT INTRO SCREEN ===== */
+
+.fight-intro {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.fight-intro__text {
+  font-size: 42px;
+  font-weight: 900;
+  color: #ff5722;
+  text-shadow:
+    0 0 12px #ff5722,
+    0 0 30px rgba(255, 87, 34, 0.7),
+    0 0 60px rgba(255, 87, 34, 0.35);
+  letter-spacing: 3px;
+  animation: fight-intro-pulse 2s ease forwards;
+  margin: 0;
+  padding: 0 24px;
+  text-align: center;
+}
+
+@keyframes fight-intro-pulse {
+  0%   { opacity: 0; transform: scale(0.8); }
+  30%  { opacity: 1; transform: scale(1.05); }
+  70%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* ===== VICTORY SCREEN ===== */
+
+.victory-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 30%, #1a0a00 0%, #000 100%);
+}
+
+.victory-screen__inner {
+  text-align: center;
+  background: linear-gradient(160deg, #2d1200 0%, #0d0000 100%);
+  border: 3px solid #ff8c00;
+  border-radius: 20px;
+  padding: 48px 56px;
+  box-shadow: 0 0 50px rgba(255, 140, 0, 0.4);
+  animation: df-pop 0.4s cubic-bezier(.22,.68,0,1.5);
+}
+
+.victory-screen__emoji {
+  font-size: 64px;
+  margin: 0 0 8px;
+}
+
+.victory-screen__title {
+  font-size: 36px;
+  font-weight: 900;
+  color: #ffc107;
+  margin: 0 0 10px;
+  text-shadow: 0 0 16px rgba(255, 193, 7, 0.5);
+}
+
+.victory-screen__sub {
+  font-size: 16px;
+  color: #a07050;
+  margin: 0 0 28px;
+  max-width: 320px;
+}
+
+.victory-screen__btn {
+  padding: 14px 36px;
+  border-radius: 12px;
+  border: 2px solid #ff8c00;
+  background: linear-gradient(180deg, #e67e22 0%, #ca6f1e 100%);
+  color: #fff;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.victory-screen__btn:hover {
+  background: linear-gradient(180deg, #f39c12 0%, #e67e22 100%);
+}

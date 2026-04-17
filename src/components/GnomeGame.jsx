@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import './GnomeGame.css';
 
 const CELL = 40;
-const BASKET_VALUE     = 15;
-const ICE_BASKET_VALUE = 30;
+const BASKET_VALUE      = 15;
+const ICE_BASKET_VALUE  = 30;
+const LAVA_BASKET_VALUE = 75;
 
 /* Simboli: ' '=brīvs, '#'=siena, 'T'=koks, 'R'=sākums, 'H'=mērķis
  * baskets[] — groziņu koordinātes (uz brīvām šūnām) */
@@ -227,6 +228,110 @@ const ICE_LEVELS = [
       { x: 11, y: 1 }, { x: 2, y: 5 }, { x: 17, y: 5 },
       { x: 10, y: 7 }, { x: 2, y: 10 }, { x: 17, y: 10 },
       { x: 10, y: 13 }, { x: 2, y: 15 },
+    ],
+  },
+];
+
+const LAVA_LEVELS = [
+  {
+    label: '1. lavas līmenis',
+    reward: 1000,
+    map: [
+      '##############',
+      '#R           #',
+      '#            #',
+      '#   ######   #',
+      '#            #',
+      '#   ######   #',
+      '#            #',
+      '#         H  #',
+      '##############',
+    ],
+    baskets: [{ x: 7, y: 1 }, { x: 2, y: 4 }, { x: 11, y: 4 }],
+  },
+  {
+    label: '2. lavas līmenis',
+    reward: 2000,
+    map: [
+      '################',
+      '#R             #',
+      '#              #',
+      '######### ######',
+      '#              #',
+      '######  ########',
+      '#              #',
+      '#           H  #',
+      '################',
+    ],
+    baskets: [{ x: 8, y: 1 }, { x: 2, y: 4 }, { x: 13, y: 4 }, { x: 4, y: 7 }],
+  },
+  {
+    label: '3. lavas līmenis',
+    reward: 3000,
+    map: [
+      '##################',
+      '#R               #',
+      '#                #',
+      '#  ########  ##  #',
+      '#                #',
+      '#  ##  ########  #',
+      '#                #',
+      '#  ########  ##  #',
+      '#                #',
+      '#             H  #',
+      '##################',
+    ],
+    baskets: [
+      { x: 9, y: 1 }, { x: 2, y: 4 }, { x: 14, y: 4 },
+      { x: 2, y: 7 }, { x: 14, y: 7 },
+    ],
+  },
+  {
+    label: '4. lavas līmenis',
+    reward: 4000,
+    map: [
+      '####################',
+      '#R                 #',
+      '#                  #',
+      '######   ###########',
+      '#                  #',
+      '###########   ######',
+      '#                  #',
+      '######   ###########',
+      '#                  #',
+      '#               H  #',
+      '####################',
+    ],
+    baskets: [
+      { x: 11, y: 1 }, { x: 2, y: 4 }, { x: 17, y: 4 },
+      { x: 2, y: 7 }, { x: 17, y: 7 },
+    ],
+  },
+  {
+    label: '5. lavas līmenis',
+    reward: 5000,
+    map: [
+      '####################',
+      '#R                 #',
+      '#                  #',
+      '#  ######    ####  #',
+      '#                  #',
+      '#                  #',
+      '#     ######       #',
+      '#                  #',
+      '#  ######    ####  #',
+      '#                  #',
+      '#     ######       #',
+      '#                  #',
+      '#  ######    ####  #',
+      '#                  #',
+      '#              H   #',
+      '####################',
+    ],
+    baskets: [
+      { x: 11, y: 1 }, { x: 2, y: 5 }, { x: 17, y: 5 },
+      { x: 10, y: 7 }, { x: 2, y: 10 }, { x: 17, y: 10 },
+      { x: 10, y: 13 }, { x: 2, y: 13 },
     ],
   },
 ];
@@ -741,6 +846,187 @@ function PolarLacisSvg() {
   );
 }
 
+/* ---- Lavas rakstzīmju SVG komponenti ---- */
+
+function LavaPiedzivotajsSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Lavas Piedzīvotājs">
+      <ellipse cx="20" cy="30" rx="13" ry="9" fill="#c0391b" />
+      <path d="M13,27 Q16,23 19,27 Q21,23 24,27" fill="none" stroke="#ff8c00" strokeWidth="1.5" opacity="0.85" />
+      <ellipse cx="20" cy="18" rx="12" ry="11" fill="#c0391b" />
+      <polygon points="20,7 17,0 13,9" fill="#ff5722" />
+      <polygon points="20,7 23,0 27,9" fill="#ff5722" />
+      <polygon points="20,4 18,1 22,5" fill="#ffc107" opacity="0.9" />
+      <circle cx="14" cy="17" r="3.5" fill="#ff8c00" />
+      <circle cx="26" cy="17" r="3.5" fill="#ff8c00" />
+      <circle cx="14" cy="17" r="1.8" fill="#111" />
+      <circle cx="26" cy="17" r="1.8" fill="#111" />
+      <circle cx="15" cy="16" r="0.9" fill="#ffe082" opacity="0.9" />
+      <circle cx="27" cy="16" r="0.9" fill="#ffe082" opacity="0.9" />
+      <ellipse cx="20" cy="21" rx="2.2" ry="1.6" fill="#922b21" />
+    </svg>
+  );
+}
+
+function LavasKirzakaSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Lavas Ķirzaka">
+      {/* Tail */}
+      <path d="M8,38 Q3,30 6,22 Q11,16 16,21" fill="none" stroke="#b03000" strokeWidth="7" strokeLinecap="round" />
+      {/* Body */}
+      <ellipse cx="24" cy="30" rx="14" ry="9" fill="#c0391b" />
+      {/* Spines */}
+      <polygon points="18,23 15,13 21,24" fill="#ff5722" />
+      <polygon points="25,21 23,11 28,22" fill="#ff5722" />
+      <polygon points="31,22 29,13 35,23" fill="#ff5722" />
+      {/* Head */}
+      <ellipse cx="28" cy="18" rx="12" ry="10" fill="#c0391b" />
+      {/* Eyes */}
+      <ellipse cx="24" cy="14" rx="4.5" ry="4" fill="#ffc107" />
+      <ellipse cx="36" cy="14" rx="4.5" ry="4" fill="#ffc107" />
+      <ellipse cx="24" cy="14" rx="1.5" ry="3.5" fill="#111" />
+      <ellipse cx="36" cy="14" rx="1.5" ry="3.5" fill="#111" />
+      <circle cx="25" cy="13" r="1" fill="#fff" opacity="0.7" />
+      <circle cx="37" cy="13" r="1" fill="#fff" opacity="0.7" />
+      {/* Tongue */}
+      <line x1="39" y1="18" x2="44" y2="16" stroke="#e91e63" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="39" y1="18" x2="44" y2="21" stroke="#e91e63" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function LavasKakisSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Lavas Kaķis">
+      {/* Tail with flame tip */}
+      <path d="M7,40 Q3,30 6,20 Q13,13 20,22 Q22,30 18,40" fill="#7b1a00" />
+      <polygon points="6,20 2,11 11,20" fill="#ff5722" />
+      <circle cx="5" cy="15" r="3.5" fill="#ffa726" opacity="0.8" />
+      {/* Body */}
+      <ellipse cx="26" cy="31" rx="13" ry="9" fill="#7b1a00" />
+      {/* Head */}
+      <circle cx="26" cy="19" r="13" fill="#7b1a00" />
+      {/* Ears */}
+      <polygon points="17,11 13,1 22,13" fill="#7b1a00" />
+      <polygon points="35,11 39,1 30,13" fill="#7b1a00" />
+      <polygon points="18,10 15,4 21,12" fill="#c0391b" opacity="0.6" />
+      <polygon points="34,10 37,4 31,12" fill="#c0391b" opacity="0.6" />
+      {/* Eyes */}
+      <ellipse cx="20" cy="18" rx="5" ry="4.5" fill="#ff8c00" />
+      <ellipse cx="32" cy="18" rx="5" ry="4.5" fill="#ff8c00" />
+      <ellipse cx="20" cy="18" rx="1.8" ry="4" fill="#111" />
+      <ellipse cx="32" cy="18" rx="1.8" ry="4" fill="#111" />
+      <circle cx="21.5" cy="16.5" r="1.2" fill="#ffe082" opacity="0.85" />
+      <circle cx="33.5" cy="16.5" r="1.2" fill="#ffe082" opacity="0.85" />
+      {/* Nose */}
+      <polygon points="26,23 23,26 29,26" fill="#c0391b" />
+    </svg>
+  );
+}
+
+function LavasLapsaSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Lavas Lapsa">
+      {/* Tail with flame */}
+      <ellipse cx="7" cy="33" rx="8" ry="12" fill="#b03000" />
+      <polygon points="7,22 2,13 12,22" fill="#ff5722" />
+      <circle cx="6" cy="17" r="4" fill="#ffa726" opacity="0.8" />
+      {/* Body */}
+      <ellipse cx="25" cy="33" rx="13" ry="9" fill="#b03000" />
+      <ellipse cx="27" cy="36" rx="7" ry="6" fill="#7b1a00" opacity="0.7" />
+      {/* Head */}
+      <ellipse cx="26" cy="19" rx="13" ry="13" fill="#b03000" />
+      {/* Ears */}
+      <polygon points="16,11 13,1 22,13" fill="#b03000" />
+      <polygon points="36,11 39,1 30,13" fill="#b03000" />
+      <polygon points="17,10 15,4 21,12" fill="#7b1a00" opacity="0.55" />
+      <polygon points="35,10 37,4 31,12" fill="#7b1a00" opacity="0.55" />
+      {/* Muzzle */}
+      <ellipse cx="28" cy="24" rx="8" ry="6" fill="#7b1a00" opacity="0.7" />
+      {/* Eyes */}
+      <ellipse cx="20" cy="16" rx="4" ry="3.5" fill="#ff8c00" />
+      <ellipse cx="32" cy="16" rx="4" ry="3.5" fill="#ff8c00" />
+      <ellipse cx="20" cy="16" rx="1.5" ry="3" fill="#111" />
+      <ellipse cx="32" cy="16" rx="1.5" ry="3" fill="#111" />
+      <circle cx="21" cy="14.5" r="1.1" fill="#ffe082" opacity="0.85" />
+      <circle cx="33" cy="14.5" r="1.1" fill="#ffe082" opacity="0.85" />
+      {/* Nose */}
+      <ellipse cx="28" cy="22" rx="3" ry="2.2" fill="#111" />
+    </svg>
+  );
+}
+
+function LavasErglisSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Lavas Ērglis">
+      {/* Wings */}
+      <path d="M20,22 Q8,13 0,17 Q6,9 14,18" fill="#7b1a00" />
+      <path d="M20,22 Q32,13 40,17 Q34,9 26,18" fill="#7b1a00" />
+      {/* Flame wing tips */}
+      <polygon points="2,17 0,9 6,17" fill="#ff5722" />
+      <polygon points="38,17 40,9 34,17" fill="#ff5722" />
+      <circle cx="1" cy="13" r="2.5" fill="#ffa726" opacity="0.8" />
+      <circle cx="39" cy="13" r="2.5" fill="#ffa726" opacity="0.8" />
+      {/* Body */}
+      <ellipse cx="20" cy="30" rx="11" ry="9" fill="#7b1a00" />
+      {/* Head */}
+      <circle cx="20" cy="17" r="12" fill="#7b1a00" />
+      <ellipse cx="20" cy="16" rx="9" ry="8" fill="#c0391b" />
+      {/* Beak */}
+      <polygon points="20,21 16,27 24,25" fill="#ffa726" />
+      {/* Eyes */}
+      <circle cx="13" cy="14" r="4" fill="#ffa726" />
+      <circle cx="27" cy="14" r="4" fill="#ffa726" />
+      <circle cx="13" cy="14" r="2.5" fill="#111" />
+      <circle cx="27" cy="14" r="2.5" fill="#111" />
+      <circle cx="14" cy="13" r="0.9" fill="#fff" opacity="0.8" />
+      <circle cx="28" cy="13" r="0.9" fill="#fff" opacity="0.8" />
+    </svg>
+  );
+}
+
+function LavasLauvaSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Lavas Lauva">
+      {/* Flame mane spikes */}
+      <polygon points="20,4 16,0 12,8" fill="#ff5722" />
+      <polygon points="20,4 24,0 28,8" fill="#ff5722" />
+      <polygon points="9,11 4,5 9,14" fill="#ff5722" />
+      <polygon points="31,11 36,5 31,14" fill="#ff5722" />
+      <polygon points="7,21 1,16 6,23" fill="#ff5722" />
+      <polygon points="33,21 39,16 34,23" fill="#ff5722" />
+      <circle cx="20" cy="5" r="4" fill="#ffa726" opacity="0.7" />
+      <circle cx="9" cy="11" r="3.5" fill="#ffa726" opacity="0.65" />
+      <circle cx="31" cy="11" r="3.5" fill="#ffa726" opacity="0.65" />
+      {/* Head */}
+      <circle cx="20" cy="20" r="16" fill="#b03000" />
+      <ellipse cx="20" cy="21" rx="12" ry="11" fill="#c0391b" />
+      {/* Muzzle */}
+      <ellipse cx="20" cy="27" rx="7.5" ry="5.5" fill="#7b1a00" opacity="0.75" />
+      {/* Eyes */}
+      <circle cx="13" cy="17" r="4.5" fill="#ffc107" />
+      <circle cx="27" cy="17" r="4.5" fill="#ffc107" />
+      <circle cx="13" cy="17" r="2.8" fill="#111" />
+      <circle cx="27" cy="17" r="2.8" fill="#111" />
+      <circle cx="14.5" cy="15.5" r="1.3" fill="#fff" opacity="0.85" />
+      <circle cx="28.5" cy="15.5" r="1.3" fill="#fff" opacity="0.85" />
+      {/* Nose */}
+      <ellipse cx="20" cy="25" rx="4.5" ry="3" fill="#111" />
+    </svg>
+  );
+}
+
+export function LavaAvatarSvg({ characterId }) {
+  switch (characterId) {
+    case 'lavas-kirzaka':  return <LavasKirzakaSvg />;
+    case 'lavas-kakis':    return <LavasKakisSvg />;
+    case 'lavas-lapsa':    return <LavasLapsaSvg />;
+    case 'lavas-erglis':   return <LavasErglisSvg />;
+    case 'lavas-lauva':    return <LavasLauvaSvg />;
+    default:               return <LavaPiedzivotajsSvg />;
+  }
+}
+
 export function IceAvatarSvg({ characterId }) {
   switch (characterId) {
     case 'pingvins':   return <PingvinsSvg />;
@@ -862,10 +1148,69 @@ function IcePickupSvg() {
   );
 }
 
+function LavaWall() {
+  return (
+    <svg className="gc-wall-tree" viewBox="0 0 40 40" aria-hidden="true">
+      <rect width="40" height="40" fill="#1a0000" />
+      <path d="M20,0 L17,10 L21,18 L16,28 L20,40" stroke="#ff5722" strokeWidth="2.5" fill="none" opacity="0.85" />
+      <path d="M5,12 L11,20 L7,32 L13,40" stroke="#ff8c00" strokeWidth="1.5" fill="none" opacity="0.65" />
+      <path d="M35,4 L28,16 L32,24 L26,36" stroke="#ff5722" strokeWidth="1.5" fill="none" opacity="0.65" />
+      <circle cx="17" cy="10" r="2.2" fill="#ffa726" opacity="0.75" />
+      <circle cx="21" cy="18" r="2" fill="#ff8c00" opacity="0.7" />
+      <circle cx="16" cy="28" r="2.2" fill="#ffa726" opacity="0.65" />
+      <circle cx="11" cy="20" r="1.5" fill="#ff8c00" opacity="0.65" />
+      <rect width="40" height="40" fill="#3d1a00" opacity="0.28" />
+    </svg>
+  );
+}
+
+function LavaGoalSvg() {
+  return (
+    <svg className="gc-house" viewBox="0 0 40 40" aria-label="Lavas cietoksnis">
+      {/* Stone arch */}
+      <path d="M4,30 A16,16 0 0,1 36,30Z" fill="#2d1200" stroke="#c0391b" strokeWidth="1.5" />
+      {/* Dark cave */}
+      <ellipse cx="20" cy="28" rx="12" ry="10" fill="#1a0000" />
+      {/* Lava glow inside */}
+      <ellipse cx="20" cy="30" rx="8" ry="7" fill="#c0391b" opacity="0.45" />
+      <ellipse cx="20" cy="32" rx="5" ry="5" fill="#ff5722" opacity="0.3" />
+      {/* Stone stalactites */}
+      <polygon points="11,28 13,15 15,28" fill="#2d1200" />
+      <polygon points="19,28 20,12 22,28" fill="#2d1200" />
+      <polygon points="26,28 28,16 30,28" fill="#2d1200" />
+      {/* Lava drips */}
+      <circle cx="15" cy="29" r="2" fill="#ffa726" opacity="0.75" />
+      <circle cx="25" cy="31" r="2" fill="#ffa726" opacity="0.65" />
+      <circle cx="20" cy="34" r="1.5" fill="#ff8c00" opacity="0.7" />
+      {/* Ground glow */}
+      <rect x="0" y="30" width="40" height="10" rx="2" fill="#3d1a00" opacity="0.5" />
+    </svg>
+  );
+}
+
+function LavaPickupSvg() {
+  return (
+    <svg className="gc-basket" viewBox="0 0 36 36" aria-label="Lavas kristāls">
+      <polygon points="18,3 27,11 27,23 18,30 9,23 9,11" fill="#c0391b" />
+      <polygon points="18,3 27,11 18,13" fill="#ff5722" opacity="0.75" />
+      <polygon points="18,13 27,11 27,23 18,30" fill="#7b1a00" opacity="0.75" />
+      <polygon points="18,3 27,11 27,23 18,30 9,23 9,11" fill="none" stroke="#ff8c00" strokeWidth="1.5" />
+      <circle cx="18" cy="16" r="4.5" fill="#ffa726" opacity="0.5" />
+      <line x1="18" y1="7" x2="18" y2="9.5" stroke="#ffe082" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="23" y1="9" x2="21.5" y2="11" stroke="#ffe082" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function CellBg({ ch, world }) {
-  if (ch === '#') return world === 'ice' ? <IceWall /> : <ForestWall />;
+  if (ch === '#') {
+    if (world === 'ice')  return <IceWall />;
+    if (world === 'lava') return <LavaWall />;
+    return <ForestWall />;
+  }
   if (ch === 'T') return <div className="gc-tree">🌲</div>;
-  if (world === 'ice') return <div className="gc-floor gc-floor--ice" />;
+  if (world === 'ice')  return <div className="gc-floor gc-floor--ice" />;
+  if (world === 'lava') return <div className="gc-floor gc-floor--lava" />;
   return <div className="gc-floor" />;
 }
 
@@ -922,10 +1267,11 @@ export default function GnomeGame({
   characterId = 'rukitis',
   world = 'forest',
   onTeleport,
+  onWorldComplete,
 }) {
-  const activeLevels = world === 'ice' ? ICE_LEVELS : FOREST_LEVELS;
-  const basketVal = world === 'ice' ? ICE_BASKET_VALUE : BASKET_VALUE;
-  const isLastForestLevel = (idx) => world === 'forest' && idx === activeLevels.length - 1;
+  const activeLevels = world === 'ice' ? ICE_LEVELS : world === 'lava' ? LAVA_LEVELS : FOREST_LEVELS;
+  const basketVal = world === 'ice' ? ICE_BASKET_VALUE : world === 'lava' ? LAVA_BASKET_VALUE : BASKET_VALUE;
+  const useTeleporter = (world === 'forest' || world === 'ice');
 
   const [levelIdx, setLevelIdx] = useState(0);
   const [levelData, setLevelData] = useState(() => parseLevel(activeLevels[0].map));
@@ -987,18 +1333,19 @@ export default function GnomeGame({
           setEarnedThisLevel(true);
           onCoinsChange?.(activeLevels[levelIdx].reward);
         }
-        if (isLastForestLevel(levelIdx)) {
+        const isLastLevel = levelIdx >= totalLevels - 1;
+        if (useTeleporter && isLastLevel) {
           setTeleporting(true);
         } else {
           setWon(true);
-          if (levelIdx >= totalLevels - 1) setAllDone(true);
+          if (isLastLevel) setAllDone(true);
         }
       }
 
       return { x: nx, y: ny };
     });
     setSteps((s) => s + 1);
-  }, [won, teleporting, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, activeLevels, basketVal, onCoinsChange]);
+  }, [won, teleporting, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, activeLevels, basketVal, useTeleporter, onCoinsChange]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -1017,16 +1364,16 @@ export default function GnomeGame({
   const { grid, house, cols, rows } = levelData;
   const basketBonus = basketsCollected * basketVal;
   const currentLevel = activeLevels[levelIdx];
-  const showTeleporterGoal = isLastForestLevel(levelIdx);
-  const AvatarComp = world === 'ice' ? IceAvatarSvg : AvatarSvg;
+  const showTeleporterGoal = useTeleporter && levelIdx === totalLevels - 1;
+  const AvatarComp = world === 'ice' ? IceAvatarSvg : world === 'lava' ? LavaAvatarSvg : AvatarSvg;
 
   return (
-    <div className={`gnome-game${world === 'ice' ? ' gnome-game--ice' : ''}`}>
+    <div className={`gnome-game${world === 'ice' ? ' gnome-game--ice' : ''}${world === 'lava' ? ' gnome-game--lava' : ''}`}>
       <div className="gnome-game__header">
         <span className="gnome-game__level-badge">{currentLevel.label}</span>
         <span className="gnome-game__steps">Soļi: {steps}</span>
         <span className="gnome-game__baskets-hud" title="Savāktie laupījumi">
-          {world === 'ice' ? '🐟' : '🧺'} {basketsCollected}/{totalBaskets}
+          {world === 'ice' ? '🐟' : world === 'lava' ? '💎' : '🧺'} {basketsCollected}/{totalBaskets}
           {basketsCollected > 0 && (
             <span className="gnome-game__basket-bonus"> +{basketBonus} ◉</span>
           )}
@@ -1035,7 +1382,7 @@ export default function GnomeGame({
       </div>
 
       <div
-        className={`gnome-grid${world === 'ice' ? ' gnome-grid--ice' : ''}`}
+        className={`gnome-grid${world === 'ice' ? ' gnome-grid--ice' : ''}${world === 'lava' ? ' gnome-grid--lava' : ''}`}
         style={{
           gridTemplateColumns: `repeat(${cols}, ${CELL}px)`,
           gridTemplateRows:    `repeat(${rows}, ${CELL}px)`,
@@ -1051,8 +1398,17 @@ export default function GnomeGame({
             return (
               <div key={bk} className="gnome-cell">
                 <CellBg ch={ch} world={world} />
-                {isGoal && (showTeleporterGoal ? <TeleporterSvg /> : world === 'ice' ? <IglooSvg /> : <HouseSvg />)}
-                {hasBasket && (world === 'ice' ? <IcePickupSvg /> : <BasketSvg />)}
+                {isGoal && (
+                  showTeleporterGoal ? <TeleporterSvg /> :
+                  world === 'ice'  ? <IglooSvg /> :
+                  world === 'lava' ? <LavaGoalSvg /> :
+                  <HouseSvg />
+                )}
+                {hasBasket && (
+                  world === 'ice'  ? <IcePickupSvg />  :
+                  world === 'lava' ? <LavaPickupSvg /> :
+                  <BasketSvg />
+                )}
                 {isGnome && <AvatarComp characterId={characterId} />}
                 <CollectFlash collected={justCollected} value={basketVal} />
               </div>
@@ -1061,7 +1417,7 @@ export default function GnomeGame({
         )}
       </div>
 
-      <div className={`gnome-dpad${world === 'ice' ? ' gnome-dpad--ice' : ''}`} aria-label="Kustības vadība">
+      <div className={`gnome-dpad${world === 'ice' ? ' gnome-dpad--ice' : ''}${world === 'lava' ? ' gnome-dpad--lava' : ''}`} aria-label="Kustības vadība">
         <div className="gnome-dpad__row">
           <button type="button" className="gnome-dpad__btn" onClick={() => tryMove('ArrowUp')} aria-label="Uz augšu">▲</button>
         </div>
@@ -1094,18 +1450,26 @@ export default function GnomeGame({
       )}
 
       {won && (
-        <div className={`gnome-game__win${world === 'ice' ? ' gnome-game__win--ice' : ''}`} role="status">
+        <div className={`gnome-game__win${world === 'ice' ? ' gnome-game__win--ice' : ''}${world === 'lava' ? ' gnome-game__win--lava' : ''}`} role="status">
           {allDone ? (
             <>
               <p className="gnome-game__win-title">
-                {world === 'ice' ? '🧊 Ledus pasaule iekarota!' : '🏠 Visi meža līmeņi pabeigti!'}
+                {world === 'lava' ? '🌋 Lavas pasaule iekarota!' :
+                 world === 'ice'  ? '🧊 Ledus pasaule iekarota!' :
+                 '🏠 Visi meža līmeņi pabeigti!'}
               </p>
               <p className="gnome-game__win-sub">
-                {world === 'ice' ? 'Zivis' : 'Groziņi'}: {basketsCollected}/{totalBaskets} · Bonuss: +{basketBonus} ◉
+                {world === 'lava' ? 'Kristāli' : world === 'ice' ? 'Zivis' : 'Groziņi'}: {basketsCollected}/{totalBaskets} · Bonuss: +{basketBonus} ◉
               </p>
-              <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={restartAll}>
-                Spēlēt no sākuma
-              </button>
+              {world === 'lava' ? (
+                <button type="button" className="gnome-game__btn gnome-game__btn--lava" onClick={onWorldComplete}>
+                  ⚔️ Uz kauju ar pūķi!
+                </button>
+              ) : (
+                <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={restartAll}>
+                  Spēlēt no sākuma
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -1114,7 +1478,7 @@ export default function GnomeGame({
               </p>
               <p className="gnome-game__win-sub">
                 Balva: +{currentLevel.reward} ◉
-                {basketsCollected > 0 && ` · ${world === 'ice' ? 'Zivis' : 'Groziņi'}: +${basketBonus} ◉ (${basketsCollected}/${totalBaskets})`}
+                {basketsCollected > 0 && ` · ${world === 'ice' ? 'Zivis' : world === 'lava' ? 'Kristāli' : 'Groziņi'}: +${basketBonus} ◉ (${basketsCollected}/${totalBaskets})`}
                 {' · '}Soļi: {steps}
               </p>
               <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={goNext}>
