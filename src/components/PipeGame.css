@@ -259,7 +259,6 @@
 }
 
 .pipe-game__board-wrap {
-  overflow: visible;
   display: flex;
   justify-content: center;
   padding: 8px;
@@ -284,7 +283,6 @@
   display: grid;
   gap: 3px;
   padding: 4px;
-  overflow: visible;
 }
 
 .pipe-cell {
@@ -353,26 +351,19 @@
 
 .pipe-cell--has-propeller {
   position: relative;
-  overflow: visible;
-  z-index: 2;
+  overflow: hidden;
 }
 
 .pipe-cell--prop-blocked {
   filter: brightness(0.96);
 }
 
-/** Propeller vizuāli aptver ~3 lauciņu diametru (katrs lauciņš = 100% platums) */
+/** Propellers pilnā šūnā; stari no centra līdz malai (~pusē lauciņa garums vienā virzienā = viena šūnas mala). */
 .propeller-overlay {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: calc(300% + 6px);
-  height: calc(300% + 6px);
-  margin-left: calc(-150% - 3px);
-  margin-top: calc(-150% - 3px);
+  inset: 0;
   pointer-events: none;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   transition:
@@ -398,17 +389,18 @@
   animation: propeller-spin 0.85s linear infinite;
 }
 
-.propeller-svg__blade {
-  stroke: rgba(0, 0, 0, 0.15);
-  stroke-width: 0.5;
+.propeller-svg__ray {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
 }
 
-.propeller-overlay--closed .propeller-svg__blade {
-  fill: #e74c3c;
+.propeller-overlay--closed .propeller-svg__ray {
+  stroke: #e74c3c;
 }
 
-.propeller-overlay--open .propeller-svg__blade {
-  fill: #2ecc71;
+.propeller-overlay--open .propeller-svg__ray {
+  stroke: #2ecc71;
 }
 
 .propeller-overlay--closed {
