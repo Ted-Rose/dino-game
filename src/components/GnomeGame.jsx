@@ -154,114 +154,232 @@ function initBaskets(levelIdx) {
 
 function GnomeSvg() {
   return (
-    <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Rūķītis">
-      <polygon className="gc-gnome__hat" points="16,1 8,18 24,18" />
-      <rect className="gc-gnome__hat-band" x="8" y="16" width="16" height="3" rx="1" />
-      <ellipse className="gc-gnome__face" cx="16" cy="23" rx="6" ry="5" />
-      <ellipse className="gc-gnome__beard" cx="16" cy="28" rx="7" ry="5" />
-      <circle className="gc-gnome__eye" cx="13" cy="22" r="1.2" />
-      <circle className="gc-gnome__eye" cx="19" cy="22" r="1.2" />
-      <ellipse className="gc-gnome__nose" cx="16" cy="25" rx="2" ry="1.4" />
-      <rect className="gc-gnome__body" x="10" y="31" width="12" height="8" rx="3" />
+    <svg className="gc-gnome" viewBox="0 0 48 56" aria-label="Rūķītis">
+      {/* Hat */}
+      <polygon points="24,1 10,26 38,26" fill="#c0392b" />
+      <polygon points="24,1 13,24 29,22" fill="#e74c3c" opacity="0.35" />
+      <rect x="10" y="23" width="28" height="5" rx="2" fill="#7b241c" />
+      <rect x="19" y="22" width="10" height="7" rx="1.5" fill="#d4ac0d" />
+      {/* Face */}
+      <ellipse cx="24" cy="36" rx="11" ry="10" fill="#f5cba7" />
+      <ellipse cx="16" cy="37" rx="4" ry="3" fill="#f1948a" opacity="0.45" />
+      <ellipse cx="32" cy="37" rx="4" ry="3" fill="#f1948a" opacity="0.45" />
+      {/* Eyes */}
+      <circle cx="19" cy="33" r="2.8" fill="#2c3e50" />
+      <circle cx="29" cy="33" r="2.8" fill="#2c3e50" />
+      <circle cx="20" cy="32" r="1" fill="#fff" />
+      <circle cx="30" cy="32" r="1" fill="#fff" />
+      {/* Nose */}
+      <ellipse cx="24" cy="37" rx="2.8" ry="2" fill="#e8a07c" />
+      {/* Moustache */}
+      <path d="M18,40 Q22,43 24,40 Q26,43 30,40" fill="none" stroke="#ecf0f1" strokeWidth="2.2" strokeLinecap="round" />
+      {/* Beard */}
+      <ellipse cx="24" cy="46" rx="14" ry="9" fill="#ecf0f1" />
+      <ellipse cx="13" cy="44" rx="7" ry="7" fill="#ecf0f1" />
+      <ellipse cx="35" cy="44" rx="7" ry="7" fill="#ecf0f1" />
+      {/* Body */}
+      <rect x="12" y="50" width="24" height="6" rx="4" fill="#27ae60" />
+      <rect x="12" y="50" width="24" height="3" rx="2" fill="#2ecc71" opacity="0.45" />
+      <rect x="12" y="53" width="24" height="2" fill="#1e8449" opacity="0.3" />
     </svg>
   );
 }
 
 function EzisSvg() {
   return (
-    <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Ezis">
-      <polygon points="8,28 6,18 12,27" fill="#4e342e" />
-      <polygon points="13,26 12,16 17,26" fill="#4e342e" />
-      <polygon points="18,26 18,15 23,26" fill="#4e342e" />
-      <polygon points="23,27 24,17 28,28" fill="#4e342e" />
-      <ellipse cx="18" cy="32" rx="12" ry="7" fill="#6d4c41" />
-      <ellipse cx="21" cy="33" rx="7" ry="5" fill="#d7ccc8" />
-      <circle cx="27" cy="30" r="1.5" fill="#111" />
-      <ellipse cx="30" cy="32" rx="2" ry="1.2" fill="#3e2723" />
+    <svg className="gc-gnome" viewBox="0 0 48 56" aria-label="Ezis">
+      {/* Spines */}
+      <polygon points="14,32 10,14 18,30" fill="#3e2723" />
+      <polygon points="20,28 17,10 24,28" fill="#3e2723" />
+      <polygon points="26,27 25,9 31,27" fill="#3e2723" />
+      <polygon points="32,29 34,11 38,30" fill="#3e2723" />
+      <polygon points="8,38 4,22 12,36" fill="#4e342e" />
+      <polygon points="38,38 44,22 40,36" fill="#4e342e" />
+      {/* Body */}
+      <ellipse cx="24" cy="42" rx="19" ry="13" fill="#6d4c41" />
+      {/* Belly */}
+      <ellipse cx="24" cy="44" rx="11" ry="9" fill="#d7ccc8" />
+      {/* Head */}
+      <circle cx="24" cy="32" r="10" fill="#8d6e63" />
+      {/* Face shading */}
+      <ellipse cx="28" cy="35" rx="7" ry="5" fill="#a1887f" />
+      {/* Eyes */}
+      <circle cx="19" cy="29" r="3" fill="#1a1a1a" />
+      <circle cx="20" cy="28" r="1" fill="#fff" />
+      <circle cx="30" cy="30" r="2.2" fill="#1a1a1a" />
+      <circle cx="31" cy="29" r="0.8" fill="#fff" />
+      {/* Nose */}
+      <ellipse cx="32" cy="34" rx="3.5" ry="2.5" fill="#3e2723" />
+      <ellipse cx="33" cy="33.5" rx="1.2" ry="0.8" fill="#5d4037" opacity="0.5" />
+      {/* Feet */}
+      <ellipse cx="16" cy="54" rx="5.5" ry="3" fill="#5d4037" />
+      <ellipse cx="32" cy="54" rx="5.5" ry="3" fill="#5d4037" />
     </svg>
   );
 }
 
 function VavereSvg() {
   return (
-    <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Vāvere">
-      <path d="M7,38 Q2,22 9,14 Q20,8 19,22 Q16,32 20,38" fill="#a0522d" stroke="#6d3a0e" strokeWidth="1" />
-      <ellipse cx="22" cy="30" rx="8" ry="9" fill="#c17f5a" />
-      <ellipse cx="23" cy="18" rx="7" ry="6" fill="#c17f5a" />
-      <ellipse cx="18" cy="13" rx="3" ry="4" fill="#c17f5a" />
-      <ellipse cx="28" cy="13" rx="3" ry="4" fill="#c17f5a" />
-      <ellipse cx="18" cy="13" rx="1.5" ry="2.5" fill="#d4a373" />
-      <ellipse cx="28" cy="13" rx="1.5" ry="2.5" fill="#d4a373" />
-      <circle cx="20" cy="17" r="2.5" fill="#111" />
-      <circle cx="27" cy="17" r="2.5" fill="#111" />
-      <circle cx="21" cy="16" r="0.7" fill="#fff" />
-      <circle cx="28" cy="16" r="0.7" fill="#fff" />
-      <ellipse cx="23" cy="21" rx="1.8" ry="1.2" fill="#7b3f20" />
+    <svg className="gc-gnome" viewBox="0 0 48 56" aria-label="Vāvere">
+      {/* Big fluffy tail */}
+      <path d="M9,56 Q2,40 7,26 Q16,12 26,22 Q30,34 26,50 Q22,58 18,56Z" fill="#c67c3a" />
+      <path d="M9,56 Q4,42 9,30 Q16,18 24,26 Q27,36 24,52" fill="#e8943a" opacity="0.5" />
+      <path d="M10,56 Q6,44 10,34 Q17,22 24,30" fill="#f0a050" opacity="0.3" />
+      {/* Body */}
+      <ellipse cx="30" cy="42" rx="12" ry="13" fill="#cd853f" />
+      <ellipse cx="30" cy="46" rx="7" ry="8" fill="#f5deb3" opacity="0.65" />
+      {/* Head */}
+      <ellipse cx="30" cy="23" rx="11" ry="11" fill="#cd853f" />
+      {/* Ears */}
+      <ellipse cx="21" cy="14" rx="5" ry="7" fill="#cd853f" />
+      <ellipse cx="38" cy="14" rx="5" ry="7" fill="#cd853f" />
+      <ellipse cx="21" cy="14" rx="2.5" ry="4" fill="#d4a373" opacity="0.8" />
+      <ellipse cx="38" cy="14" rx="2.5" ry="4" fill="#d4a373" opacity="0.8" />
+      {/* Eyes */}
+      <circle cx="25" cy="21" r="4" fill="#1a1a1a" />
+      <circle cx="36" cy="21" r="4" fill="#1a1a1a" />
+      <circle cx="26.5" cy="19.5" r="1.4" fill="#fff" />
+      <circle cx="37.5" cy="19.5" r="1.4" fill="#fff" />
+      <circle cx="25" cy="21" r="1.5" fill="#4a2" opacity="0.4" />
+      <circle cx="36" cy="21" r="1.5" fill="#4a2" opacity="0.4" />
+      {/* Nose */}
+      <ellipse cx="30" cy="27" rx="2.5" ry="1.8" fill="#8b4513" />
+      {/* Paws */}
+      <ellipse cx="21" cy="54" rx="5" ry="3" fill="#b5651d" />
+      <ellipse cx="38" cy="54" rx="5" ry="3" fill="#b5651d" />
     </svg>
   );
 }
 
 function PuceSvg() {
   return (
-    <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Pūce">
-      <ellipse cx="16" cy="31" rx="11" ry="8" fill="#8d6e63" />
-      <path d="M6,31 Q10,25 16,29 Q22,25 26,31" fill="#6d4c41" opacity="0.6" />
-      <circle cx="16" cy="17" r="11" fill="#8d6e63" />
-      <polygon points="9,9 7,3 13,10" fill="#6d4c41" />
-      <polygon points="23,9 25,3 19,10" fill="#6d4c41" />
-      <ellipse cx="16" cy="18" rx="9" ry="8" fill="#bcaaa4" />
-      <circle cx="12" cy="16" r="4.5" fill="#fff9c4" />
-      <circle cx="20" cy="16" r="4.5" fill="#fff9c4" />
-      <circle cx="12" cy="16" r="3" fill="#f57f17" />
-      <circle cx="20" cy="16" r="3" fill="#f57f17" />
-      <circle cx="12" cy="16" r="1.5" fill="#111" />
-      <circle cx="20" cy="16" r="1.5" fill="#111" />
-      <polygon points="16,19 13,23 19,23" fill="#f9a825" />
+    <svg className="gc-gnome" viewBox="0 0 48 56" aria-label="Pūce">
+      {/* Body with wing pattern */}
+      <ellipse cx="24" cy="46" rx="15" ry="10" fill="#795548" />
+      <path d="M9,48 Q12,38 24,44 Q36,38 39,48" fill="#6d4c41" />
+      <path d="M11,50 Q14,44 20,47" fill="#5d4037" opacity="0.5" />
+      <path d="M37,50 Q34,44 28,47" fill="#5d4037" opacity="0.5" />
+      {/* Head (large round) */}
+      <circle cx="24" cy="22" r="18" fill="#795548" />
+      {/* Ear tufts */}
+      <polygon points="13,8 9,0 17,10" fill="#5d4037" />
+      <polygon points="35,8 39,0 31,10" fill="#5d4037" />
+      <polygon points="13,10 11,4 16,10" fill="#795548" />
+      <polygon points="35,10 37,4 32,10" fill="#795548" />
+      {/* Facial disk */}
+      <ellipse cx="24" cy="23" rx="14" ry="13" fill="#bcaaa4" />
+      {/* Eyes */}
+      <circle cx="17" cy="21" r="7" fill="#fffde7" />
+      <circle cx="31" cy="21" r="7" fill="#fffde7" />
+      <circle cx="17" cy="21" r="5.5" fill="#f57f17" />
+      <circle cx="31" cy="21" r="5.5" fill="#f57f17" />
+      <circle cx="17" cy="21" r="3.5" fill="#111" />
+      <circle cx="31" cy="21" r="3.5" fill="#111" />
+      <circle cx="18.5" cy="19.5" r="1.3" fill="#fff" />
+      <circle cx="32.5" cy="19.5" r="1.3" fill="#fff" />
+      {/* Beak */}
+      <polygon points="24,26 20,32 28,32" fill="#f9a825" />
+      <line x1="24" y1="26" x2="24" y2="32" stroke="#e65100" strokeWidth="0.8" />
+      {/* Feather marks on head */}
+      <path d="M10,18 Q13,13 16,16" fill="none" stroke="#5d4037" strokeWidth="1.2" opacity="0.4" />
+      <path d="M38,18 Q35,13 32,16" fill="none" stroke="#5d4037" strokeWidth="1.2" opacity="0.4" />
+      <path d="M13,28 Q16,24 18,27" fill="none" stroke="#9e9e9e" strokeWidth="0.8" opacity="0.35" />
     </svg>
   );
 }
 
 function LusisSvg() {
   return (
-    <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Lūsis">
-      <ellipse cx="16" cy="33" rx="11" ry="7" fill="#c8a96b" />
-      <circle cx="11" cy="31" r="2.5" fill="#a08040" opacity="0.55" />
-      <circle cx="20" cy="35" r="2" fill="#a08040" opacity="0.55" />
-      <ellipse cx="16" cy="19" rx="10" ry="9" fill="#c8a96b" />
-      <polygon points="9,13 7,4 14,12" fill="#c8a96b" />
-      <polygon points="23,13 25,4 18,12" fill="#c8a96b" />
-      <polygon points="10,11 8,5 13,11" fill="#4e342e" />
-      <polygon points="22,11 24,5 19,11" fill="#4e342e" />
-      <polygon points="10,13 9,7 13,12" fill="#f48fb1" opacity="0.65" />
-      <polygon points="22,13 23,7 19,12" fill="#f48fb1" opacity="0.65" />
-      <ellipse cx="12" cy="18" rx="3.5" ry="3" fill="#c8b400" />
-      <ellipse cx="20" cy="18" rx="3.5" ry="3" fill="#c8b400" />
-      <ellipse cx="12" cy="18" rx="1.2" ry="2.5" fill="#111" />
-      <ellipse cx="20" cy="18" rx="1.2" ry="2.5" fill="#111" />
-      <ellipse cx="16" cy="23" rx="2.5" ry="1.5" fill="#f4a7b9" />
-      <line x1="16" y1="23" x2="4" y2="21" stroke="#ffffffaa" strokeWidth="0.8" />
-      <line x1="16" y1="24" x2="4" y2="26" stroke="#ffffffaa" strokeWidth="0.8" />
-      <line x1="16" y1="23" x2="28" y2="21" stroke="#ffffffaa" strokeWidth="0.8" />
-      <line x1="16" y1="24" x2="28" y2="26" stroke="#ffffffaa" strokeWidth="0.8" />
+    <svg className="gc-gnome" viewBox="0 0 48 56" aria-label="Lūsis">
+      {/* Body */}
+      <ellipse cx="24" cy="44" rx="16" ry="11" fill="#c8a96b" />
+      {/* Spots */}
+      <ellipse cx="15" cy="41" rx="4" ry="3" fill="#a08040" opacity="0.5" />
+      <ellipse cx="32" cy="46" rx="3.5" ry="2.5" fill="#a08040" opacity="0.5" />
+      <ellipse cx="22" cy="50" rx="3" ry="2" fill="#a08040" opacity="0.4" />
+      {/* Ruff (face fur) */}
+      <ellipse cx="24" cy="28" rx="18" ry="14" fill="#d4b87a" opacity="0.55" />
+      {/* Head */}
+      <ellipse cx="24" cy="23" rx="15" ry="14" fill="#c8a96b" />
+      {/* Ear base */}
+      <polygon points="10,14 7,2 18,14" fill="#c8a96b" />
+      <polygon points="38,14 41,2 30,14" fill="#c8a96b" />
+      {/* Ear tuft (black) */}
+      <polygon points="11,12 9,4 16,12" fill="#3e2723" />
+      <polygon points="37,12 39,4 32,12" fill="#3e2723" />
+      {/* Ear inner */}
+      <polygon points="12,14 11,8 15,13" fill="#f4a7b9" opacity="0.65" />
+      <polygon points="36,14 37,8 33,13" fill="#f4a7b9" opacity="0.65" />
+      {/* Eyes */}
+      <ellipse cx="17" cy="20" rx="5.5" ry="5" fill="#d4aa00" />
+      <ellipse cx="31" cy="20" rx="5.5" ry="5" fill="#d4aa00" />
+      <ellipse cx="17" cy="20" rx="2" ry="4.5" fill="#111" />
+      <ellipse cx="31" cy="20" rx="2" ry="4.5" fill="#111" />
+      <circle cx="18.5" cy="18.5" r="1.2" fill="#fff" opacity="0.85" />
+      <circle cx="32.5" cy="18.5" r="1.2" fill="#fff" opacity="0.85" />
+      {/* Nose */}
+      <polygon points="24,27 20,31 28,31" fill="#f4a7b9" />
+      <ellipse cx="24" cy="28" rx="3" ry="2" fill="#e91e8c" opacity="0.35" />
+      {/* Whiskers */}
+      <line x1="22" y1="29" x2="4" y2="26" stroke="#fff" strokeWidth="0.9" opacity="0.75" />
+      <line x1="22" y1="31" x2="4" y2="34" stroke="#fff" strokeWidth="0.9" opacity="0.75" />
+      <line x1="26" y1="29" x2="44" y2="26" stroke="#fff" strokeWidth="0.9" opacity="0.75" />
+      <line x1="26" y1="31" x2="44" y2="34" stroke="#fff" strokeWidth="0.9" opacity="0.75" />
+      {/* Paws */}
+      <ellipse cx="15" cy="54" rx="6" ry="3.5" fill="#b89050" />
+      <ellipse cx="33" cy="54" rx="6" ry="3.5" fill="#b89050" />
     </svg>
   );
 }
 
 function LaumaSvg() {
   return (
-    <svg className="gc-gnome" viewBox="0 0 32 40" aria-label="Meža Lauma">
-      <ellipse cx="16" cy="26" rx="13" ry="13" fill="#1b5e20" opacity="0.25" />
-      <path d="M9,40 Q7,28 16,20 Q25,28 23,40Z" fill="#2e7d32" />
-      <path d="M8,14 Q4,26 6,40" fill="none" stroke="#76ff03" strokeWidth="2.5" opacity="0.7" />
-      <path d="M24,14 Q28,26 26,40" fill="none" stroke="#76ff03" strokeWidth="2.5" opacity="0.7" />
-      <ellipse cx="16" cy="11" rx="9" ry="10" fill="#388e3c" />
-      <ellipse cx="13" cy="10" rx="2.8" ry="3" fill="#e8f5e9" />
-      <ellipse cx="19" cy="10" rx="2.8" ry="3" fill="#e8f5e9" />
-      <circle cx="13" cy="10" r="1.8" fill="#76ff03" />
-      <circle cx="19" cy="10" r="1.8" fill="#76ff03" />
-      <circle cx="5" cy="3" r="1.2" fill="#76ff03" opacity="0.9" />
-      <circle cx="27" cy="5" r="1" fill="#76ff03" opacity="0.9" />
-      <circle cx="16" cy="1" r="1" fill="#76ff03" opacity="0.9" />
+    <svg className="gc-gnome" viewBox="0 0 48 56" aria-label="Meža Lauma">
+      {/* Green hair flowing down sides */}
+      <path d="M10,18 Q3,32 5,56" fill="none" stroke="#1b5e20" strokeWidth="9" strokeLinecap="round" />
+      <path d="M38,18 Q45,32 43,56" fill="none" stroke="#1b5e20" strokeWidth="9" strokeLinecap="round" />
+      {/* Hair top/back */}
+      <ellipse cx="24" cy="14" rx="15" ry="13" fill="#2e7d32" />
+      {/* Hair highlights */}
+      <path d="M12,20 Q8,34 10,52" fill="none" stroke="#43a047" strokeWidth="3" strokeLinecap="round" opacity="0.6" />
+      <path d="M36,20 Q40,34 38,52" fill="none" stroke="#43a047" strokeWidth="3" strokeLinecap="round" opacity="0.6" />
+      {/* Dress/body */}
+      <path d="M15,40 Q10,52 12,56 L36,56 Q38,52 33,40 Q24,46 15,40Z" fill="#388e3c" />
+      <path d="M18,40 Q24,48 30,40 Q28,44 24,46 Q20,44 18,40Z" fill="#66bb6a" opacity="0.5" />
+      {/* Neck */}
+      <rect x="20" y="34" width="8" height="8" rx="3" fill="#fce4ec" />
+      {/* Face */}
+      <ellipse cx="24" cy="26" rx="12" ry="13" fill="#fce4ec" />
+      {/* Ears */}
+      <ellipse cx="12" cy="26" rx="3" ry="4" fill="#fce4ec" />
+      <ellipse cx="36" cy="26" rx="3" ry="4" fill="#fce4ec" />
+      <ellipse cx="12" cy="26" rx="1.5" ry="2.5" fill="#f8bbd0" opacity="0.6" />
+      <ellipse cx="36" cy="26" rx="1.5" ry="2.5" fill="#f8bbd0" opacity="0.6" />
+      {/* Leaf crown */}
+      <path d="M12,16 Q15,9 20,14 Q22,7 24,13 Q26,7 28,14 Q33,9 36,16" fill="#1b5e20" stroke="#33691e" strokeWidth="0.8" />
+      <circle cx="24" cy="13" r="2" fill="#a5d6a7" opacity="0.8" />
+      {/* Eyebrows */}
+      <path d="M16,21 Q19,18 22,20" fill="none" stroke="#1b5e20" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M26,20 Q29,18 32,21" fill="none" stroke="#1b5e20" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Eyes (green, expressive) */}
+      <ellipse cx="19" cy="24" rx="4.5" ry="4" fill="#fff" />
+      <ellipse cx="29" cy="24" rx="4.5" ry="4" fill="#fff" />
+      <circle cx="19" cy="24" r="3.2" fill="#2e7d32" />
+      <circle cx="29" cy="24" r="3.2" fill="#2e7d32" />
+      <circle cx="19" cy="24" r="1.8" fill="#111" />
+      <circle cx="29" cy="24" r="1.8" fill="#111" />
+      <circle cx="20" cy="23" r="0.9" fill="#fff" opacity="0.9" />
+      <circle cx="30" cy="23" r="0.9" fill="#fff" opacity="0.9" />
+      {/* Nose */}
+      <ellipse cx="24" cy="29" rx="2" ry="1.3" fill="#f8bbd0" />
+      {/* Lips */}
+      <path d="M20,32 Q24,35 28,32" fill="none" stroke="#e91e63" strokeWidth="1.8" strokeLinecap="round" />
+      {/* Sparkles */}
+      <circle cx="5" cy="22" r="2" fill="#76ff03" opacity="0.9" />
+      <circle cx="43" cy="18" r="1.5" fill="#76ff03" opacity="0.85" />
+      <circle cx="3" cy="38" r="1.5" fill="#aeff00" opacity="0.8" />
+      <circle cx="45" cy="40" r="1.8" fill="#76ff03" opacity="0.8" />
+      <circle cx="24" cy="3" r="1.5" fill="#b9f6ca" opacity="0.9" />
     </svg>
   );
 }

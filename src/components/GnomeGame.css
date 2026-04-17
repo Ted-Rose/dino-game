@@ -177,20 +177,11 @@
 
 .gc-gnome {
   position: absolute;
-  width: 30px;
-  height: 38px;
+  width: 32px;
+  height: 40px;
   z-index: 10;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.38));
 }
-
-/* Rūķītis */
-.gc-gnome__hat      { fill: #c0392b; }
-.gc-gnome__hat-band { fill: #922b21; }
-.gc-gnome__face     { fill: #f5cba7; }
-.gc-gnome__beard    { fill: #ecf0f1; }
-.gc-gnome__eye      { fill: #2c3e50; }
-.gc-gnome__nose     { fill: #e8a87c; }
-.gc-gnome__body     { fill: #27ae60; }
 
 /* ===== Mājiņa ===== */
 
@@ -398,8 +389,8 @@
 }
 
 .gnome-shop__avatar {
-  width: 56px;
-  height: 70px;
+  width: 64px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,9 +400,9 @@
 /* Scale up the avatar SVG inside shop card */
 .gnome-shop__avatar .gc-gnome {
   position: relative;
-  width: 44px;
-  height: 56px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  width: 56px;
+  height: 70px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.22));
 }
 
 .gnome-shop__name {
