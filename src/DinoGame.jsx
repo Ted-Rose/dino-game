@@ -19,6 +19,9 @@ const PHYSICS = {
   speedIncrease: 0.0015,
 };
 
+const INITIAL_LIVES = 3;
+const INVINCIBLE_DURATION = 90;
+
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -33,6 +36,7 @@ export default function DinoGame() {
   });
   const [gameOver, setGameOver] = useState(false);
   const [started, setStarted] = useState(false);
+  const [lives, setLives] = useState(INITIAL_LIVES);
 
   useEffect(() => {
     const initialState = {
@@ -60,6 +64,8 @@ export default function DinoGame() {
       nightTimer: 0,
       running: false,
       over: false,
+      lives: INITIAL_LIVES,
+      invincibleTimer: 0,
     };
     stateRef.current = initialState;
   }, []);
@@ -198,26 +204,48 @@ export default function DinoGame() {
         state.night = !state.night;
       }
 
-      for (const o of state.obstacles) {
-        if (checkCollision(dino, o)) {
-          state.over = true;
-          state.running = false;
-          setGameOver(true);
-          const finalScore = Math.floor(state.score);
-          setHighScore((prev) => {
-            if (finalScore > prev) {
-              localStorage.setItem('dino-high-score', String(finalScore));
-              return finalScore;
+      if (state.invincibleTimer > 0) {
+        state.invincibleTimer = Math.max(0, state.invincibleTimer - dt);
+      } else {
+        for (const o of state.obstacles) {
+          if (checkCollision(dino, o)) {
+            state.lives -= 1;
+            setLives(state.lives);
+            if (state.lives <= 0) {
+              state.over = true;
+              state.running = false;
+              setGameOver(true);
+              const finalScore = Math.floor(state.score);
+              setHighScore((prev) => {
+                if (finalScore > prev) {
+                  localStorage.setItem('dino-high-score', String(finalScore));
+                  return finalScore;
+                }
+                return prev;
+              });
+            } else {
+              state.invincibleTimer = INVINCIBLE_DURATION;
+              state.obstacles = state.obstacles.filter(
+                (ob) => ob.x + ob.width < dino.x || ob.x > dino.x + DINO.width + 120,
+              );
+              if (dino.jumping) {
+                dino.vy = PHYSICS.jumpVelocity * 0.7;
+              }
             }
-            return prev;
-          });
-          break;
+            break;
+          }
         }
       }
     };
 
     const drawDino = () => {
       const d = state.dino;
+      if (
+        state.invincibleTimer > 0 &&
+        Math.floor(state.invincibleTimer / 6) % 2 === 0
+      ) {
+        return;
+      }
       const fg = state.night ? '#f7f7f7' : '#535353';
       ctx.fillStyle = fg;
 
@@ -310,6 +338,28 @@ export default function DinoGame() {
       });
     };
 
+    const drawHeart = (x, y, filled) => {
+      ctx.fillStyle = filled
+        ? state.night
+          ? '#ff6b6b'
+          : '#e74c3c'
+        : state.night
+          ? '#555'
+          : '#ccc';
+      ctx.fillRect(x + 2, y, 4, 2);
+      ctx.fillRect(x + 8, y, 4, 2);
+      ctx.fillRect(x, y + 2, 14, 4);
+      ctx.fillRect(x + 2, y + 6, 10, 2);
+      ctx.fillRect(x + 4, y + 8, 6, 2);
+      ctx.fillRect(x + 6, y + 10, 2, 2);
+    };
+
+    const drawLives = () => {
+      for (let i = 0; i < INITIAL_LIVES; i++) {
+        drawHeart(20 + i * 20, 20, i < state.lives);
+      }
+    };
+
     const drawScore = () => {
       const fg = state.night ? '#f7f7f7' : '#535353';
       ctx.fillStyle = fg;
@@ -352,6 +402,7 @@ export default function DinoGame() {
       state.obstacles.forEach(drawObstacle);
       drawDino();
       drawScore();
+      drawLives();
 
       if (state.over) drawGameOver();
       else if (!state.running) drawStartScreen();
@@ -387,7 +438,10 @@ export default function DinoGame() {
       state.nightTimer = 0;
       state.over = false;
       state.running = true;
+      state.lives = INITIAL_LIVES;
+      state.invincibleTimer = 0;
       setScore(0);
+      setLives(INITIAL_LIVES);
       setGameOver(false);
       setStarted(true);
     };
@@ -449,6 +503,7 @@ export default function DinoGame() {
       />
       <div className="status-bar">
         <span>Punkti: {score}</span>
+        <span>Dzīvības: {'♥'.repeat(lives)}{'♡'.repeat(Math.max(0, INITIAL_LIVES - lives))}</span>
         <span>Rekords: {highScore}</span>
         {gameOver && <span className="game-over-text">Spēle galā!</span>}
         {!started && !gameOver && <span>Spied Space, lai sāktu</span>}
