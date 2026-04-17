@@ -1,10 +1,53 @@
-import { useCallback, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import './PipeGame.css';
 
-const COLS = 8;
-const ROWS = 6;
-const TAP = { x: 0, y: 3 };
-const AQUARIUM = { x: 7, y: 3 };
+const COINS_STORAGE_KEY = 'pipe-game-coins';
+
+function loadStoredCoins() {
+  try {
+    const raw = localStorage.getItem(COINS_STORAGE_KEY);
+    const n = raw === null ? NaN : parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Nauda par instrumentiem plauktā */
+const SHOP_PRICES = {
+  straight: 38,
+  corner: 48,
+  cross: 85,
+};
+
+function randomLevelReward() {
+  return Math.floor(Math.random() * 51) + 100;
+}
+
+/** Līmeņi: statiskie akmeņi; kustīgie vārti apmaina atvērtu/aizvērtu pēc fāzes (dažādi offset). */
+const LEVEL_CONFIGS = [
+  {
+    cols: 8,
+    rows: 6,
+    tap: { x: 0, y: 3 },
+    aquarium: { x: 7, y: 3 },
+    staticBlocks: new Set(),
+    movingGates: [],
+    inventory: { straight: 10, corner: 12, cross: 0 },
+  },
+  {
+    cols: 8,
+    rows: 6,
+    tap: { x: 0, y: 3 },
+    aquarium: { x: 7, y: 3 },
+    staticBlocks: new Set(['3,3', '4,3']),
+    movingGates: [
+      { x: 2, y: 2, offset: 0 },
+      { x: 5, y: 4, offset: 1 },
+    ],
+    inventory: { straight: 14, corner: 16, cross: 2 },
+  },
+];
 
 const DIR = {
   N: [0, -1],
@@ -23,6 +66,7 @@ function rotateDirection(d, quarterTurns) {
 function baseOpenings(kind) {
   if (kind === 'straight') return ['E', 'W'];
   if (kind === 'corner') return ['N', 'E'];
+  if (kind === 'cross') return ['N', 'E', 'S', 'W'];
   return [];
 }
 
@@ -30,54 +74,66 @@ function openingsFor(kind, rot) {
   return baseOpenings(kind).map((d) => rotateDirection(d, rot));
 }
 
-function emptyGrid() {
-  return Array.from({ length: ROWS }, () =>
-    Array.from({ length: COLS }, () => null),
+function emptyGrid(cfg) {
+  return Array.from({ length: cfg.rows }, () =>
+    Array.from({ length: cfg.cols }, () => null),
   );
 }
 
-function isTap(x, y) {
-  return x === TAP.x && y === TAP.y;
+function isTap(x, y, cfg) {
+  return x === cfg.tap.x && y === cfg.tap.y;
 }
 
-function isAquarium(x, y) {
-  return x === AQUARIUM.x && y === AQUARIUM.y;
+function isAquarium(x, y, cfg) {
+  return x === cfg.aquarium.x && y === cfg.aquarium.y;
 }
 
-function isFixedCell(x, y) {
-  return isTap(x, y) || isAquarium(x, y);
+function isFixedCell(x, y, cfg) {
+  return isTap(x, y, cfg) || isAquarium(x, y, cfg);
 }
 
-function cellOpenings(x, y, grid) {
-  if (isTap(x, y)) return ['E'];
-  if (isAquarium(x, y)) return ['W'];
+function isStaticRock(x, y, cfg) {
+  return cfg.staticBlocks.has(`${x},${y}`);
+}
+
+function movingGateOpen(x, y, cfg, gatePhase) {
+  const g = cfg.movingGates.find((o) => o.x === x && o.y === y);
+  if (!g) return true;
+  return ((gatePhase + g.offset) % 2) === 0;
+}
+
+function cellOpenings(x, y, grid, cfg, gatePhase) {
+  if (isTap(x, y, cfg)) return ['E'];
+  if (isAquarium(x, y, cfg)) return ['W'];
+  if (isStaticRock(x, y, cfg)) return [];
+  if (!movingGateOpen(x, y, cfg, gatePhase)) return [];
   const cell = grid[y][x];
   if (!cell) return [];
   return openingsFor(cell.kind, cell.rot);
 }
 
-function buildNeighbors(x, y, grid) {
+function buildNeighbors(x, y, grid, cfg, gatePhase) {
   const next = [];
-  for (const d of cellOpenings(x, y, grid)) {
+  for (const d of cellOpenings(x, y, grid, cfg, gatePhase)) {
     const [dx, dy] = DIR[d];
     const nx = x + dx;
     const ny = y + dy;
-    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+    if (nx < 0 || nx >= cfg.cols || ny < 0 || ny >= cfg.rows) continue;
     const back = OPP[d];
-    if (!cellOpenings(nx, ny, grid).includes(back)) continue;
+    if (!cellOpenings(nx, ny, grid, cfg, gatePhase).includes(back)) continue;
     next.push([nx, ny]);
   }
   return next;
 }
 
-function findReachable(grid) {
-  const start = `${TAP.x},${TAP.y}`;
+function findReachable(grid, cfg, gatePhase) {
+  const start = `${cfg.tap.x},${cfg.tap.y}`;
   const visited = new Set([start]);
   const parent = new Map([[start, null]]);
-  const queue = [[TAP.x, TAP.y]];
+  const queue = [[cfg.tap.x, cfg.tap.y]];
   while (queue.length > 0) {
     const [x, y] = queue.shift();
-    if (x === AQUARIUM.x && y === AQUARIUM.y) {
+    if (x === cfg.aquarium.x && y === cfg.aquarium.y) {
       const pathCells = new Set();
       let key = `${x},${y}`;
       while (key) {
@@ -86,7 +142,7 @@ function findReachable(grid) {
       }
       return { ok: true, pathCells };
     }
-    for (const [nx, ny] of buildNeighbors(x, y, grid)) {
+    for (const [nx, ny] of buildNeighbors(x, y, grid, cfg, gatePhase)) {
       const nk = `${nx},${ny}`;
       if (visited.has(nk)) continue;
       visited.add(nk);
@@ -176,28 +232,127 @@ function AquariumSvg({ filling, clipId }) {
   );
 }
 
-const INITIAL_INV = { straight: 10, corner: 12 };
+function RockObstacle() {
+  return (
+    <div className="rock-obstacle" aria-hidden="true">
+      <div className="rock-obstacle__body" />
+    </div>
+  );
+}
+
+function MovingGateOverlay({ closed }) {
+  return (
+    <div
+      className={`moving-gate-overlay${closed ? ' moving-gate-overlay--closed' : ' moving-gate-overlay--open'}`}
+      aria-hidden="true"
+    >
+      <div className="moving-gate-overlay__bars">
+        <span />
+        <span />
+        <span />
+      </div>
+      <span className="moving-gate-overlay__hint">
+        {closed ? 'Aizvērts' : 'Vaļā'}
+      </span>
+    </div>
+  );
+}
+
+const SHELF_TYPES = [
+  { kind: 'straight', label: 'Taisnā' },
+  { kind: 'corner', label: 'Leņķa' },
+  { kind: 'cross', label: '+ krusts' },
+];
 
 export default function PipeGame() {
-  const [grid, setGrid] = useState(() => emptyGrid());
+  const [level, setLevel] = useState(1);
+  const cfg = LEVEL_CONFIGS[level - 1];
+  const maxLevel = LEVEL_CONFIGS.length;
+
+  const [grid, setGrid] = useState(() => emptyGrid(LEVEL_CONFIGS[0]));
+  const [inventory, setInventory] = useState(() => ({ ...LEVEL_CONFIGS[0].inventory }));
+  const [gatePhase, setGatePhase] = useState(0);
   const aquariumClipId = useId().replace(/:/g, '');
-  const [inventory, setInventory] = useState(() => ({ ...INITIAL_INV }));
   const [selectedKind, setSelectedKind] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [flowing, setFlowing] = useState(false);
   const [pathCells, setPathCells] = useState(() => new Set());
+  const [allComplete, setAllComplete] = useState(false);
+  const [coins, setCoins] = useState(loadStoredCoins);
+  const [rewardFlash, setRewardFlash] = useState(null);
+  const coinsEarnedLockedRef = useRef(false);
 
-  const reachable = useMemo(() => findReachable(grid), [grid]);
-
-  const resetAll = useCallback(() => {
-    setGrid(emptyGrid());
-    setInventory({ ...INITIAL_INV });
+  const applyLevelConfig = useCallback((nextLevel) => {
+    const c = LEVEL_CONFIGS[nextLevel - 1];
+    setLevel(nextLevel);
+    setGrid(emptyGrid(c));
+    setInventory({ ...c.inventory });
     setSelectedKind(null);
     setError('');
     setSuccess(false);
     setFlowing(false);
     setPathCells(new Set());
+    setGatePhase(0);
+    setAllComplete(false);
+    coinsEarnedLockedRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COINS_STORAGE_KEY, String(coins));
+    } catch {
+      /* ignore */
+    }
+  }, [coins]);
+
+  useEffect(() => {
+    if (rewardFlash == null) return undefined;
+    const t = window.setTimeout(() => setRewardFlash(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [rewardFlash]);
+
+  useEffect(() => {
+    if (!cfg.movingGates.length) return undefined;
+    const id = window.setInterval(() => {
+      setGatePhase((p) => p + 1);
+    }, 2200);
+    return () => window.clearInterval(id);
+  }, [cfg.movingGates.length, level]);
+
+  const reachable = useMemo(
+    () => findReachable(grid, cfg, gatePhase),
+    [grid, cfg, gatePhase],
+  );
+
+  const resetCurrentLevel = useCallback(() => {
+    setGrid(emptyGrid(cfg));
+    setInventory({ ...cfg.inventory });
+    setSelectedKind(null);
+    setError('');
+    setSuccess(false);
+    setFlowing(false);
+    setPathCells(new Set());
+    setAllComplete(false);
+    coinsEarnedLockedRef.current = false;
+  }, [cfg]);
+
+  const goToNextLevel = useCallback(() => {
+    if (level < maxLevel) applyLevelConfig(level + 1);
+  }, [level, maxLevel, applyLevelConfig]);
+
+  const restartFromLevelOne = useCallback(() => {
+    applyLevelConfig(1);
+  }, [applyLevelConfig]);
+
+  const buyPart = useCallback((kind) => {
+    const price = SHOP_PRICES[kind];
+    if (price == null) return;
+    setCoins((current) => {
+      if (current < price) return current;
+      setInventory((inv) => ({ ...inv, [kind]: inv[kind] + 1 }));
+      return current - price;
+    });
   }, []);
 
   const handleShelfPick = useCallback((kind) => {
@@ -207,11 +362,15 @@ export default function PipeGame() {
 
   const handleCellPointerDown = useCallback(
     (x, y, event) => {
-      if (isFixedCell(x, y)) return;
+      if (isFixedCell(x, y, cfg)) return;
+      if (isStaticRock(x, y, cfg)) return;
+
       setError('');
       setSuccess(false);
       setFlowing(false);
       setPathCells(new Set());
+      setAllComplete(false);
+      coinsEarnedLockedRef.current = false;
 
       if (event.button === 2 || event.type === 'contextmenu') {
         event.preventDefault();
@@ -231,6 +390,7 @@ export default function PipeGame() {
 
       const cell = grid[y][x];
       if (cell) {
+        if (cell.kind === 'cross') return;
         setGrid((g) => {
           const copy = g.map((row) => row.slice());
           copy[y][x] = { ...cell, rot: (cell.rot + 1) % 4 };
@@ -251,13 +411,15 @@ export default function PipeGame() {
         [selectedKind]: inv[selectedKind] - 1,
       }));
     },
-    [grid, inventory, selectedKind],
+    [cfg, grid, inventory, selectedKind],
   );
 
   const runWater = useCallback(() => {
-    const { ok, pathCells: cells } = findReachable(grid);
+    const { ok, pathCells: cells } = findReachable(grid, cfg, gatePhase);
     if (!ok) {
-      setError('Ceļš no krāna līdz akvārijam nav pabeigts. Savieno caurules!');
+      setError(
+        'Ceļš nav gatavs vai kustīgais šķērslis šobrīd bloķē. Pārbaudi vārtu fāzi un caurules.',
+      );
       setSuccess(false);
       setFlowing(false);
       setPathCells(new Set());
@@ -267,45 +429,100 @@ export default function PipeGame() {
     setSuccess(true);
     setPathCells(cells);
     setFlowing(true);
-  }, [grid]);
+    if (level >= maxLevel) {
+      setAllComplete(true);
+    }
+    if (!coinsEarnedLockedRef.current) {
+      const gain = randomLevelReward();
+      coinsEarnedLockedRef.current = true;
+      setCoins((c) => c + gain);
+      setRewardFlash(gain);
+    }
+  }, [grid, cfg, gatePhase, level, maxLevel]);
+
+  const gateOpenAt = useCallback(
+    (x, y) => movingGateOpen(x, y, cfg, gatePhase),
+    [cfg, gatePhase],
+  );
+
+  const introLevel2 =
+    level === 2 ? (
+      <>
+        {' '}
+        <strong>2. līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
+        <strong>kustīgi vārti</strong> (mainās aptuveni ik pēc 2 s — dažādās šūnās dažādās fāzēs).
+        Griežot ūdeni, ūdens caur kustīgo šķērsli šķērso tikai tad, kad vārti ir{' '}
+        <strong>atvērti</strong> (zaļā mirdzējums).
+      </>
+    ) : null;
 
   return (
     <div className="pipe-game">
+      <div className="pipe-game__top-bar">
+        <div className="pipe-game__level-badge" aria-live="polite">
+          <span className="pipe-game__level-num">{level}. līmenis</span>
+          {cfg.movingGates.length > 0 && (
+            <span className="pipe-game__phase">Vārtu fāze: {gatePhase % 2 === 0 ? 'A' : 'B'}</span>
+          )}
+        </div>
+        <div className="pipe-game__wallet" title="Naudiņas">
+          <span className="pipe-game__wallet-icon" aria-hidden="true">
+            ◉
+          </span>
+          <span className="pipe-game__wallet-count">{coins}</span>
+          <span className="visually-hidden"> naudiņas</span>
+        </div>
+      </div>
+
+      {rewardFlash != null && (
+        <p className="pipe-game__reward-toast" role="status">
+          +{rewardFlash} naudiņas par līmeni!
+        </p>
+      )}
+
       <p className="pipe-game__intro">
-        Savieno caurules no krāna līdz akvārijam.{' '}
-        <strong>Instrumentu plauktā</strong> izvēlies caurules, klikšķini tukšā
-        lauciņā, lai tās liktu; <strong>vēlreiz klikšķini</strong> uz caurules,
-        lai grieztu. <strong>Labais klikšķis</strong> — noņemt un atdot
-        plauktam.
+        Savieno caurules no krāna līdz akvārijam. Par katru līmeni pareizi novestu ūdeni saņem{' '}
+        <strong>100–150 naudiņas</strong>; tās vari tērēt <strong>veikalā</strong>, lai nopirktu papildu
+        caurules. Instrumentu plauktā izvēlies daļas, klikšķini tukšā lauciņā; vēlreiz klikšķini uz
+        caurules, lai grieztu (krusta forma negriežas). Labais klikšķis — noņemt.{introLevel2}
       </p>
+
+      <div className="pipe-game__shop" aria-label="Veikals">
+        <span className="pipe-game__shop-label">Veikals — papildu instrumenti</span>
+        <div className="pipe-game__shop-row">
+          {SHELF_TYPES.map(({ kind, label }) => (
+            <button
+              key={kind}
+              type="button"
+              className="shop-buy-btn"
+              onClick={() => buyPart(kind)}
+              disabled={coins < SHOP_PRICES[kind]}
+            >
+              <span className="shop-buy-btn__name">{label}</span>
+              <span className="shop-buy-btn__price">{SHOP_PRICES[kind]} ◉</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="pipe-game__shelf" role="toolbar" aria-label="Cauruļu plaukts">
         <span className="pipe-game__shelf-label">Instrumentu plaukts</span>
         <div className="pipe-game__shelf-items">
-          <button
-            type="button"
-            className={`shelf-btn${selectedKind === 'straight' ? ' shelf-btn--active' : ''}`}
-            onClick={() => handleShelfPick('straight')}
-            disabled={inventory.straight <= 0}
-          >
-            <span className="shelf-btn__preview" aria-hidden="true">
-              <PipeSvg kind="straight" rot={0} />
-            </span>
-            <span className="shelf-btn__text">Taisnā</span>
-            <span className="shelf-btn__count">{inventory.straight}</span>
-          </button>
-          <button
-            type="button"
-            className={`shelf-btn${selectedKind === 'corner' ? ' shelf-btn--active' : ''}`}
-            onClick={() => handleShelfPick('corner')}
-            disabled={inventory.corner <= 0}
-          >
-            <span className="shelf-btn__preview" aria-hidden="true">
-              <PipeSvg kind="corner" rot={0} />
-            </span>
-            <span className="shelf-btn__text">Leņķa</span>
-            <span className="shelf-btn__count">{inventory.corner}</span>
-          </button>
+          {SHELF_TYPES.map(({ kind, label }) => (
+            <button
+              key={kind}
+              type="button"
+              className={`shelf-btn${selectedKind === kind ? ' shelf-btn--active' : ''}`}
+              onClick={() => handleShelfPick(kind)}
+              disabled={inventory[kind] <= 0}
+            >
+              <span className="shelf-btn__preview" aria-hidden="true">
+                <PipeSvg kind={kind} rot={0} />
+              </span>
+              <span className="shelf-btn__text">{label}</span>
+              <span className="shelf-btn__count">{inventory[kind]}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -313,39 +530,58 @@ export default function PipeGame() {
         <div
           className="pipe-grid"
           style={{
-            gridTemplateColumns: `repeat(${COLS}, minmax(32px, 44px))`,
+            gridTemplateColumns: `repeat(${cfg.cols}, minmax(32px, 44px))`,
           }}
         >
-          {Array.from({ length: ROWS }, (_, y) =>
-            Array.from({ length: COLS }, (_, x) => {
+          {Array.from({ length: cfg.rows }, (_, y) =>
+            Array.from({ length: cfg.cols }, (_, x) => {
               const key = `${x},${y}`;
               const onPath = flowing && pathCells.has(key);
-              if (isTap(x, y)) {
+              if (isTap(x, y, cfg)) {
                 return (
-                  <div key={key} className={`pipe-cell pipe-cell--tap${onPath ? ' pipe-cell--path' : ''}`}>
+                  <div
+                    key={key}
+                    className={`pipe-cell pipe-cell--tap${onPath ? ' pipe-cell--path' : ''}`}
+                  >
                     <FaucetSvg flowing={flowing && onPath} />
                   </div>
                 );
               }
-              if (isAquarium(x, y)) {
+              if (isAquarium(x, y, cfg)) {
                 return (
-                  <div key={key} className={`pipe-cell pipe-cell--aquarium${onPath ? ' pipe-cell--path' : ''}`}>
+                  <div
+                    key={key}
+                    className={`pipe-cell pipe-cell--aquarium${onPath ? ' pipe-cell--path' : ''}`}
+                  >
                     <AquariumSvg filling={success && onPath} clipId={aquariumClipId} />
                   </div>
                 );
               }
+              if (isStaticRock(x, y, cfg)) {
+                return (
+                  <div key={key} className="pipe-cell pipe-cell--rock">
+                    <RockObstacle />
+                  </div>
+                );
+              }
+
+              const hasMovingGate = cfg.movingGates.some((g) => g.x === x && g.y === y);
+              const gateClosed = hasMovingGate && !gateOpenAt(x, y);
               const cell = grid[y][x];
+
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`pipe-cell pipe-cell--build${onPath ? ' pipe-cell--path' : ''}${cell ? ' pipe-cell--filled' : ''}`}
+                  className={`pipe-cell pipe-cell--build${hasMovingGate ? ' pipe-cell--has-gate' : ''}${gateClosed ? ' pipe-cell--gate-closed' : ''}${onPath ? ' pipe-cell--path' : ''}${cell ? ' pipe-cell--filled' : ''}`}
                   onClick={(e) => handleCellPointerDown(x, y, e)}
                   onContextMenu={(e) => handleCellPointerDown(x, y, e)}
                   aria-label={
                     cell
                       ? `Caurule ${cell.kind}, griezt`
-                      : 'Tukšs lauciņš, novietot cauruli'
+                      : hasMovingGate
+                        ? 'Lauciņš ar kustīgiem vārtiem'
+                        : 'Tukšs lauciņš'
                   }
                 >
                   {cell && (
@@ -356,6 +592,7 @@ export default function PipeGame() {
                       lit={onPath}
                     />
                   )}
+                  {hasMovingGate && <MovingGateOverlay closed={gateClosed} />}
                 </button>
               );
             }),
@@ -367,8 +604,8 @@ export default function PipeGame() {
         <button type="button" className="pipe-game__btn pipe-game__btn--primary" onClick={runWater}>
           Griezt ūdeni
         </button>
-        <button type="button" className="pipe-game__btn" onClick={resetAll}>
-          Notīrīt lauciņu
+        <button type="button" className="pipe-game__btn" onClick={resetCurrentLevel}>
+          Notīrīt līmeni
         </button>
       </div>
 
@@ -377,16 +614,41 @@ export default function PipeGame() {
           {error}
         </p>
       )}
-      {success && flowing && (
+      {success && flowing && level < maxLevel && (
         <p className="pipe-game__msg pipe-game__msg--ok" role="status">
-          Ūdens plūst akvārijā. Lieliski!
+          Ūdens plūst akvārijā! Doties uz nākamo līmeni.
+        </p>
+      )}
+      {success && flowing && level >= maxLevel && (
+        <p className="pipe-game__msg pipe-game__msg--ok" role="status">
+          Pēdējais līmenis pabeigts — ūdens sasniedz akvāriju!
         </p>
       )}
       {!success && reachable.ok && (
         <p className="pipe-game__msg pipe-game__msg--hint" role="status">
-          Ceļš ir gatavs — spied &quot;Griezt ūdeni&quot;.
+          Ceļš šajā fāzē ir savienots — vari mēģināt &quot;Griezt ūdeni&quot;.
         </p>
       )}
+
+      {success && flowing && level < maxLevel && (
+        <div className="pipe-game__level-actions">
+          <button type="button" className="pipe-game__btn pipe-game__btn--primary" onClick={goToNextLevel}>
+            Doties uz {level + 1}. līmeni
+          </button>
+        </div>
+      )}
+
+      {allComplete && (
+        <div className="pipe-game__level-actions">
+          <button type="button" className="pipe-game__btn" onClick={restartFromLevelOne}>
+            Spēlēt no 1. līmeņa
+          </button>
+        </div>
+      )}
+
+      <p className="pipe-game__legend" aria-hidden="true">
+        Pelēkie akmeņi neapgāžami. Vārti — sarkans = aizvērts, zaļš = vaļā ūdens plūsmai.
+      </p>
     </div>
   );
 }
