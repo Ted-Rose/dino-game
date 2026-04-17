@@ -198,6 +198,37 @@
   margin-bottom: 16px;
 }
 
+.page-gnome {
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+.gnome-page__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.gnome-page__topbar h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #3d2a1e;
+}
+
+.gnome-page__wallet {
+  font-size: 16px;
+  font-weight: bold;
+  color: #8a6910;
+  background: linear-gradient(180deg, #fff8e7 0%, #f0e0b8 100%);
+  border: 2px solid #c9a227;
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
 .app {
   flex: 1;
   width: 100%;

@@ -34,6 +34,17 @@ export default function BurgerMenu({ id, open, onClose }) {
                   Chrome Bikšu spēle
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/rukitis"
+                  className={({ isActive }) =>
+                    `menu-link${isActive ? ' menu-link--active' : ''}`
+                  }
+                  onClick={handleNav}
+                >
+                  Rūķīša ceļojums
+                </NavLink>
+              </li>
             </ul>
           </section>
           <section className="menu-section">
