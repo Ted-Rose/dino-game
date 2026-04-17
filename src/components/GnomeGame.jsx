@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import './GnomeGame.css';
 
 const CELL = 40;
-const BASKET_VALUE = 15;
+const BASKET_VALUE     = 15;
+const ICE_BASKET_VALUE = 30;
 
 /* Simboli: ' '=brīvs, '#'=siena, 'T'=koks, 'R'=sākums, 'H'=mērķis
  * baskets[] — groziņu koordinātes (uz brīvām šūnām) */
@@ -123,7 +124,7 @@ const FOREST_LEVELS = [
 const ICE_LEVELS = [
   {
     label: '1. ledus līmenis',
-    reward: 60,
+    reward: 120,
     map: [
       '##############',
       '#R           #',
@@ -139,7 +140,7 @@ const ICE_LEVELS = [
   },
   {
     label: '2. ledus līmenis',
-    reward: 120,
+    reward: 240,
     map: [
       '################',
       '#R             #',
@@ -156,7 +157,7 @@ const ICE_LEVELS = [
   },
   {
     label: '3. ledus līmenis',
-    reward: 180,
+    reward: 360,
     map: [
       '##################',
       '#R               #',
@@ -179,7 +180,7 @@ const ICE_LEVELS = [
   },
   {
     label: '4. ledus līmenis',
-    reward: 240,
+    reward: 480,
     map: [
       '####################',
       '#R                 #',
@@ -202,7 +203,7 @@ const ICE_LEVELS = [
   },
   {
     label: '5. ledus līmenis',
-    reward: 300,
+    reward: 600,
     map: [
       '####################',
       '#R                 #',
@@ -885,11 +886,11 @@ function BasketSvg() {
   );
 }
 
-function CollectFlash({ collected }) {
+function CollectFlash({ collected, value }) {
   if (!collected) return null;
   return (
     <div className="gc-collect-flash" aria-hidden="true">
-      +{BASKET_VALUE} ◉
+      +{value} ◉
     </div>
   );
 }
@@ -923,6 +924,7 @@ export default function GnomeGame({
   onTeleport,
 }) {
   const activeLevels = world === 'ice' ? ICE_LEVELS : FOREST_LEVELS;
+  const basketVal = world === 'ice' ? ICE_BASKET_VALUE : BASKET_VALUE;
   const isLastForestLevel = (idx) => world === 'forest' && idx === activeLevels.length - 1;
 
   const [levelIdx, setLevelIdx] = useState(0);
@@ -976,7 +978,7 @@ export default function GnomeGame({
         setRemainingBaskets((rb) => { const next = new Set(rb); next.delete(k); return next; });
         setBasketsCollected((c) => c + 1);
         setLastCollected({ x: nx, y: ny });
-        onCoinsChange?.(BASKET_VALUE);
+        onCoinsChange?.(basketVal);
       }
 
       const atGoal = nx === levelData.house.x && ny === levelData.house.y;
@@ -996,7 +998,7 @@ export default function GnomeGame({
       return { x: nx, y: ny };
     });
     setSteps((s) => s + 1);
-  }, [won, teleporting, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, activeLevels, onCoinsChange]);
+  }, [won, teleporting, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, activeLevels, basketVal, onCoinsChange]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -1013,7 +1015,7 @@ export default function GnomeGame({
   const restartAll = () => { setLevelIdx(0); loadLevel(0); };
 
   const { grid, house, cols, rows } = levelData;
-  const basketBonus = basketsCollected * BASKET_VALUE;
+  const basketBonus = basketsCollected * basketVal;
   const currentLevel = activeLevels[levelIdx];
   const showTeleporterGoal = isLastForestLevel(levelIdx);
   const AvatarComp = world === 'ice' ? IceAvatarSvg : AvatarSvg;
@@ -1052,7 +1054,7 @@ export default function GnomeGame({
                 {isGoal && (showTeleporterGoal ? <TeleporterSvg /> : world === 'ice' ? <IglooSvg /> : <HouseSvg />)}
                 {hasBasket && (world === 'ice' ? <IcePickupSvg /> : <BasketSvg />)}
                 {isGnome && <AvatarComp characterId={characterId} />}
-                <CollectFlash collected={justCollected} />
+                <CollectFlash collected={justCollected} value={basketVal} />
               </div>
             );
           }),
