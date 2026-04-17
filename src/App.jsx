@@ -1,16 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import DinoGame from './DinoGame';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import Layout from './Layout';
+import GamePage from './pages/GamePage';
+import OtherPage from './pages/OtherPage';
 import './App.css';
 
 function App() {
   return (
-    <div className="app">
-      <h1>Chrome Bikšu spēle</h1>
-      <DinoGame />
-      <p className="hint">
-        Spied <kbd>Space</kbd> vai <kbd>↑</kbd>, lai lēktu. <kbd>↓</kbd>, lai pieliektos. Spied <kbd>Space</kbd>, lai sāktu no jauna.
-      </p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<GamePage />} />
+          <Route path="/cita-lapa" element={<OtherPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
