@@ -194,6 +194,10 @@
   text-align: center;
 }
 
+.page-pipe h1 {
+  margin-bottom: 16px;
+}
+
 .app {
   flex: 1;
   width: 100%;
