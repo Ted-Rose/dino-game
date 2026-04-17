@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import GnomeGame, { AvatarSvg } from '../components/GnomeGame';
+import GnomeGame, { AvatarSvg, IceAvatarSvg } from '../components/GnomeGame';
 
-const COINS_KEY    = 'gnome-game-coins';
-const OWNED_KEY    = 'gnome-owned-chars';
-const SELECTED_KEY = 'gnome-selected-char';
+const COINS_KEY      = 'gnome-game-coins';
+const OWNED_KEY      = 'gnome-owned-chars';
+const SELECTED_KEY   = 'gnome-selected-char';
+const ICE_OWNED_KEY  = 'gnome-ice-owned-chars';
+const ICE_SEL_KEY    = 'gnome-ice-selected-char';
 
 export const CHARACTERS = [
   { id: 'rukitis', label: 'Rūķītis',    price: 0,    desc: 'Mazais meža gājējs' },
@@ -18,33 +20,56 @@ export const CHARACTERS = [
   { id: 'alnis',   label: 'Alnis',       price: 3000, desc: 'Ragainais meža milzis' },
 ];
 
+export const ICE_CHARACTERS = [
+  { id: 'ziemelis',   label: 'Polārnieks',    price: 0,     desc: 'Draudzīgais ledus ceļotājs' },
+  { id: 'pingvins',   label: 'Pingvīns',      price: 3500,  desc: 'Formāli ģērbtais ledus gājējs' },
+  { id: 'polarlapsa', label: 'Polārlapsa',    price: 4500,  desc: 'Baltā ledus viltniece' },
+  { id: 'ronis',      label: 'Ronis',         price: 6000,  desc: 'Plunkšķīgais ūdens spēlētājs' },
+  { id: 'narvals',    label: 'Narvals',       price: 7500,  desc: 'Ragainais ledus jūrnieks' },
+  { id: 'polarlacis', label: 'Polārlācis',    price: 10000, desc: 'Ledus pasaules lielais karalis' },
+];
+
 function loadCoins() {
   try {
     const n = parseInt(localStorage.getItem(COINS_KEY) ?? '0', 10);
     return Number.isFinite(n) && n >= 0 ? n : 0;
   } catch { return 0; }
 }
-
-function loadOwned() {
+function loadOwned(key, defaultId) {
   try {
-    const raw = localStorage.getItem(OWNED_KEY);
-    if (!raw) return ['rukitis'];
+    const raw = localStorage.getItem(key);
+    if (!raw) return [defaultId];
     const parsed = JSON.parse(raw);
-    if (!parsed.includes('rukitis')) parsed.unshift('rukitis');
+    if (!parsed.includes(defaultId)) parsed.unshift(defaultId);
     return parsed;
-  } catch { return ['rukitis']; }
+  } catch { return [defaultId]; }
 }
-
-function loadSelected() {
-  try { return localStorage.getItem(SELECTED_KEY) ?? 'rukitis'; }
-  catch { return 'rukitis'; }
+function loadSelected(key, defaultId) {
+  try { return localStorage.getItem(key) ?? defaultId; }
+  catch { return defaultId; }
 }
 
 export default function GnomePage() {
-  const [coins, setCoins]       = useState(loadCoins);
-  const [owned, setOwned]       = useState(loadOwned);
-  const [selected, setSelected] = useState(loadSelected);
-  const [shopOpen, setShopOpen] = useState(false);
+  const [coins, setCoins]           = useState(loadCoins);
+  const [world, setWorld]           = useState('forest');
+  const [shopOpen, setShopOpen]     = useState(false);
+
+  const [owned, setOwned]           = useState(() => loadOwned(OWNED_KEY, 'rukitis'));
+  const [selected, setSelected]     = useState(() => loadSelected(SELECTED_KEY, 'rukitis'));
+
+  const [iceOwned, setIceOwned]     = useState(() => loadOwned(ICE_OWNED_KEY, 'ziemelis'));
+  const [iceSelected, setIceSelected] = useState(() => loadSelected(ICE_SEL_KEY, 'ziemelis'));
+
+  const isIce = world === 'ice';
+  const activeChars    = isIce ? ICE_CHARACTERS : CHARACTERS;
+  const activeOwned    = isIce ? iceOwned    : owned;
+  const activeSelected = isIce ? iceSelected : selected;
+  const activeOwnedKey  = isIce ? ICE_OWNED_KEY : OWNED_KEY;
+  const activeSelKey    = isIce ? ICE_SEL_KEY    : SELECTED_KEY;
+  const ActiveAvatarSvg = isIce ? IceAvatarSvg : AvatarSvg;
+
+  const setActiveOwned    = isIce ? setIceOwned    : setOwned;
+  const setActiveSelected = isIce ? setIceSelected : setSelected;
 
   const handleCoinsChange = (amount) => {
     setCoins((c) => {
@@ -55,76 +80,97 @@ export default function GnomePage() {
   };
 
   const handleBuy = (charId) => {
-    const char = CHARACTERS.find((c) => c.id === charId);
-    if (!char || owned.includes(charId) || coins < char.price) return;
+    const char = activeChars.find((c) => c.id === charId);
+    if (!char || activeOwned.includes(charId) || coins < char.price) return;
     handleCoinsChange(-char.price);
-    setOwned((prev) => {
+    setActiveOwned((prev) => {
       const next = [...prev, charId];
-      try { localStorage.setItem(OWNED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(activeOwnedKey, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
-    setSelected(charId);
-    try { localStorage.setItem(SELECTED_KEY, charId); } catch { /* ignore */ }
+    setActiveSelected(charId);
+    try { localStorage.setItem(activeSelKey, charId); } catch { /* ignore */ }
   };
 
   const handleSelect = (charId) => {
-    if (!owned.includes(charId)) return;
-    setSelected(charId);
-    try { localStorage.setItem(SELECTED_KEY, charId); } catch { /* ignore */ }
+    if (!activeOwned.includes(charId)) return;
+    setActiveSelected(charId);
+    try { localStorage.setItem(activeSelKey, charId); } catch { /* ignore */ }
   };
 
+  const handleTeleport = () => {
+    setWorld('ice');
+    setShopOpen(false);
+  };
+
+  const handleReturnToForest = () => {
+    setWorld('forest');
+    setShopOpen(false);
+  };
+
+  const shopTitle = isIce ? '❄️ Ledus radību veikals' : '🌲 Meža radību veikals';
+
   return (
-    <div className="app page-gnome">
-      <div className="gnome-page__topbar">
-        <h1>Rūķīša ceļojums</h1>
+    <div className={`app page-gnome${isIce ? ' page-gnome--ice' : ''}`}>
+      <div className={`gnome-page__topbar${isIce ? ' gnome-page__topbar--ice' : ''}`}>
+        <h1>{isIce ? '❄️ Ledus pasaule' : 'Rūķīša ceļojums'}</h1>
         <div className="gnome-page__topbar-right">
+          {isIce && (
+            <button
+              type="button"
+              className="gnome-page__return-btn"
+              onClick={handleReturnToForest}
+            >
+              🌲 Meža pasaule
+            </button>
+          )}
           <span className="gnome-page__wallet" title="Naudiņas">
             <span aria-hidden="true">◉</span> {coins}
           </span>
           <button
             type="button"
-            className={`gnome-page__shop-btn${shopOpen ? ' gnome-page__shop-btn--open' : ''}`}
+            className={`gnome-page__shop-btn${shopOpen ? ' gnome-page__shop-btn--open' : ''}${isIce ? ' gnome-page__shop-btn--ice' : ''}`}
             onClick={() => setShopOpen((v) => !v)}
             aria-expanded={shopOpen}
           >
-            🧺 Veikals
+            {isIce ? '🐟 Veikals' : '🧺 Veikals'}
           </button>
         </div>
       </div>
 
       {shopOpen && (
-        <div className="gnome-shop">
+        <div className={`gnome-shop${isIce ? ' gnome-shop--ice' : ''}`}>
           <div className="gnome-shop__header">
-            <h2 className="gnome-shop__title">Meža radību veikals</h2>
+            <h2 className="gnome-shop__title">{shopTitle}</h2>
             <p className="gnome-shop__subtitle">Nopērc jaunu tēlu un izmanto to spēlē!</p>
           </div>
           <div className="gnome-shop__grid">
-            {CHARACTERS.map((char) => {
-              const isOwned    = owned.includes(char.id);
-              const isSelected = selected === char.id;
+            {activeChars.map((char) => {
+              const isOwned    = activeOwned.includes(char.id);
+              const isSelectedChar = activeSelected === char.id;
               const canAfford  = coins >= char.price;
               return (
                 <div
                   key={char.id}
                   className={[
                     'gnome-shop__card',
-                    isSelected ? 'gnome-shop__card--selected' : '',
-                    isOwned    ? 'gnome-shop__card--owned'    : '',
+                    isSelectedChar ? 'gnome-shop__card--selected' : '',
+                    isOwned       ? 'gnome-shop__card--owned'    : '',
                   ].join(' ').trim()}
                 >
                   <div className="gnome-shop__avatar">
-                    <AvatarSvg characterId={char.id} />
+                    <ActiveAvatarSvg characterId={char.id} />
                   </div>
                   <div className="gnome-shop__name">{char.label}</div>
                   <div className="gnome-shop__desc">{char.desc}</div>
                   {isOwned ? (
                     <button
                       type="button"
-                      className={`gnome-shop__action${isSelected ? ' gnome-shop__action--active' : ''}`}
+                      className={`gnome-shop__action${isSelectedChar ? ' gnome-shop__action--active' : ''}`}
                       onClick={() => handleSelect(char.id)}
-                      disabled={isSelected}
+                      disabled={isSelectedChar}
                     >
-                      {isSelected ? '✓ Izvēlēts' : 'Izvēlēties'}
+                      {isSelectedChar ? '✓ Izvēlēts' : 'Izvēlēties'}
                     </button>
                   ) : (
                     <button
@@ -144,7 +190,13 @@ export default function GnomePage() {
         </div>
       )}
 
-      <GnomeGame onCoinsChange={handleCoinsChange} characterId={selected} />
+      <GnomeGame
+        key={world}
+        onCoinsChange={handleCoinsChange}
+        characterId={activeSelected}
+        world={world}
+        onTeleport={handleTeleport}
+      />
     </div>
   );
 }

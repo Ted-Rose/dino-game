@@ -4,11 +4,9 @@ import './GnomeGame.css';
 const CELL = 40;
 const BASKET_VALUE = 15;
 
-/**
- * Simboli: ' '=brīvs, '#'=siena, 'T'=koks, 'R'=rūķis sākums, 'H'=mājiņa
- * baskets[] — groziņu koordinātes (uz brīvām šūnām)
- */
-const LEVELS = [
+/* Simboli: ' '=brīvs, '#'=siena, 'T'=koks, 'R'=sākums, 'H'=mērķis
+ * baskets[] — groziņu koordinātes (uz brīvām šūnām) */
+const FOREST_LEVELS = [
   {
     label: '1. līmenis',
     reward: 60,
@@ -122,6 +120,116 @@ const LEVELS = [
   },
 ];
 
+const ICE_LEVELS = [
+  {
+    label: '1. ledus līmenis',
+    reward: 60,
+    map: [
+      '##############',
+      '#R           #',
+      '#            #',
+      '#  ######    #',
+      '#            #',
+      '#    ######  #',
+      '#            #',
+      '#         H  #',
+      '##############',
+    ],
+    baskets: [{ x: 7, y: 1 }, { x: 2, y: 5 }, { x: 11, y: 3 }],
+  },
+  {
+    label: '2. ledus līmenis',
+    reward: 120,
+    map: [
+      '################',
+      '#R             #',
+      '#              #',
+      '######### ######',
+      '#              #',
+      '#              #',
+      '###### #########',
+      '#              #',
+      '#           H  #',
+      '################',
+    ],
+    baskets: [{ x: 8, y: 1 }, { x: 2, y: 5 }, { x: 13, y: 5 }, { x: 4, y: 8 }],
+  },
+  {
+    label: '3. ledus līmenis',
+    reward: 180,
+    map: [
+      '##################',
+      '#R               #',
+      '#                #',
+      '#  #######  ####  #',
+      '#                #',
+      '#                #',
+      '#  ####  #######  #',
+      '#                #',
+      '#                #',
+      '#  #######  ####  #',
+      '#                #',
+      '#             H  #',
+      '##################',
+    ],
+    baskets: [
+      { x: 9, y: 1 }, { x: 2, y: 5 }, { x: 15, y: 5 },
+      { x: 2, y: 8 }, { x: 15, y: 8 }, { x: 5, y: 11 },
+    ],
+  },
+  {
+    label: '4. ledus līmenis',
+    reward: 240,
+    map: [
+      '####################',
+      '#R                 #',
+      '#                  #',
+      '#######   ##########',
+      '#                  #',
+      '#                  #',
+      '##########   #######',
+      '#                  #',
+      '#                  #',
+      '#######   ##########',
+      '#                  #',
+      '#               H  #',
+      '####################',
+    ],
+    baskets: [
+      { x: 11, y: 1 }, { x: 2, y: 5 }, { x: 17, y: 5 },
+      { x: 2, y: 8 }, { x: 17, y: 8 }, { x: 14, y: 11 },
+    ],
+  },
+  {
+    label: '5. ledus līmenis',
+    reward: 300,
+    map: [
+      '####################',
+      '#R                 #',
+      '#                  #',
+      '#  ######    ####  #',
+      '#                  #',
+      '#                  #',
+      '#     ######       #',
+      '#                  #',
+      '#  ######    ####  #',
+      '#                  #',
+      '#                  #',
+      '#     ######       #',
+      '#                  #',
+      '#  ######    ####  #',
+      '#                  #',
+      '#              H   #',
+      '####################',
+    ],
+    baskets: [
+      { x: 11, y: 1 }, { x: 2, y: 5 }, { x: 17, y: 5 },
+      { x: 10, y: 7 }, { x: 2, y: 10 }, { x: 17, y: 10 },
+      { x: 10, y: 13 }, { x: 2, y: 15 },
+    ],
+  },
+];
+
 function parseLevel(map) {
   let gnome = { x: 1, y: 1 };
   let house = { x: 1, y: 1 };
@@ -146,8 +254,8 @@ function isWalkable(grid, x, y) {
 }
 
 function basketKey(b) { return `${b.x},${b.y}`; }
-function initBaskets(levelIdx) {
-  return new Set(LEVELS[levelIdx].baskets.map(basketKey));
+function initBaskets(levels, levelIdx) {
+  return new Set(levels[levelIdx].baskets.map(basketKey));
 }
 
 /* ---- Avatāru SVG komponenti (viewBox 0 0 40 40) ---- */
@@ -458,6 +566,191 @@ export function AvatarSvg({ characterId }) {
   }
 }
 
+/* ---- Ledus rakstzīmju SVG komponenti ---- */
+
+function ZiemelisSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Ziemeļpola iedzīvotājs">
+      {/* Parka body */}
+      <ellipse cx="20" cy="34" rx="14" ry="8" fill="#1565c0" />
+      <rect x="6" y="26" width="28" height="10" rx="4" fill="#1565c0" />
+      {/* Colorful stripe */}
+      <rect x="6" y="28" width="28" height="3" rx="1" fill="#e53935" />
+      {/* Hood (big, fur-lined) */}
+      <ellipse cx="20" cy="19" rx="16" ry="14" fill="#1565c0" />
+      {/* Fur trim of hood */}
+      <ellipse cx="20" cy="20" rx="13" ry="11" fill="#e0e0e0" />
+      {/* Face */}
+      <ellipse cx="20" cy="21" rx="10" ry="9" fill="#c8976e" />
+      {/* Eyes */}
+      <circle cx="16" cy="19" r="2.5" fill="#111" />
+      <circle cx="24" cy="19" r="2.5" fill="#111" />
+      <circle cx="17" cy="18" r="0.9" fill="#fff" />
+      <circle cx="25" cy="18" r="0.9" fill="#fff" />
+      {/* Nose */}
+      <ellipse cx="20" cy="22.5" rx="2" ry="1.5" fill="#a0624a" />
+      {/* Smile */}
+      <path d="M16,25 Q20,28 24,25" fill="none" stroke="#7a4030" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PingvinsSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Pingvīns">
+      {/* Black body */}
+      <ellipse cx="20" cy="28" rx="13" ry="14" fill="#1a1a1a" />
+      {/* White belly */}
+      <ellipse cx="20" cy="30" rx="8" ry="10" fill="#f5f5f5" />
+      {/* Black head */}
+      <circle cx="20" cy="14" r="11" fill="#1a1a1a" />
+      {/* White face patch */}
+      <ellipse cx="20" cy="15" rx="7" ry="8" fill="#f5f5f5" />
+      {/* Eyes */}
+      <circle cx="16" cy="12" r="3" fill="#111" />
+      <circle cx="24" cy="12" r="3" fill="#111" />
+      <circle cx="17" cy="11" r="1" fill="#fff" />
+      <circle cx="25" cy="11" r="1" fill="#fff" />
+      {/* Orange beak */}
+      <polygon points="20,17 17,21 23,21" fill="#ff8f00" />
+      {/* Orange feet */}
+      <ellipse cx="14" cy="40" rx="5" ry="3" fill="#ff8f00" />
+      <ellipse cx="26" cy="40" rx="5" ry="3" fill="#ff8f00" />
+      {/* Wing flippers */}
+      <ellipse cx="8" cy="28" rx="4" ry="7" fill="#111" transform="rotate(-10 8 28)" />
+      <ellipse cx="32" cy="28" rx="4" ry="7" fill="#111" transform="rotate(10 32 28)" />
+    </svg>
+  );
+}
+
+function PolarLapsaSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Polārlapsa">
+      {/* Fluffy tail (white) */}
+      <ellipse cx="7" cy="33" rx="8" ry="12" fill="#e8f4fd" />
+      <ellipse cx="7" cy="36" rx="5" ry="7" fill="#c5dff0" opacity="0.55" />
+      <ellipse cx="7" cy="38" rx="4" ry="4" fill="#fff" />
+      {/* Body */}
+      <ellipse cx="24" cy="33" rx="13" ry="10" fill="#ddeeff" />
+      <ellipse cx="26" cy="36" rx="7" ry="6" fill="#fff" opacity="0.85" />
+      {/* Head */}
+      <ellipse cx="25" cy="19" rx="13" ry="13" fill="#ddeeff" />
+      {/* Pointy ears */}
+      <polygon points="15,11 12,1 21,13" fill="#ddeeff" />
+      <polygon points="35,11 38,1 29,13" fill="#ddeeff" />
+      <polygon points="16,10 14,4 20,12" fill="#b0c8e0" opacity="0.55" />
+      <polygon points="34,10 36,4 30,12" fill="#b0c8e0" opacity="0.55" />
+      {/* White muzzle */}
+      <ellipse cx="27" cy="24" rx="8" ry="6" fill="#fff" />
+      {/* Ice-blue eyes */}
+      <ellipse cx="19" cy="16" rx="4" ry="3.5" fill="#5bc8e8" />
+      <ellipse cx="31" cy="16" rx="4" ry="3.5" fill="#5bc8e8" />
+      <ellipse cx="19" cy="16" rx="1.5" ry="3" fill="#111" />
+      <ellipse cx="31" cy="16" rx="1.5" ry="3" fill="#111" />
+      <circle cx="20" cy="14.5" r="1.1" fill="#fff" opacity="0.85" />
+      <circle cx="32" cy="14.5" r="1.1" fill="#fff" opacity="0.85" />
+      {/* Nose */}
+      <ellipse cx="27" cy="22" rx="3" ry="2.2" fill="#111" />
+    </svg>
+  );
+}
+
+function RonisSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Ronis">
+      {/* Plump body (fills most of space) */}
+      <ellipse cx="20" cy="26" rx="17" ry="15" fill="#7b9ab0" />
+      {/* Lighter belly */}
+      <ellipse cx="20" cy="29" rx="11" ry="9" fill="#a8c4d4" />
+      {/* Head */}
+      <circle cx="20" cy="11" r="11" fill="#7b9ab0" />
+      {/* Eyes (big and round, seal's most expressive feature) */}
+      <circle cx="14" cy="9" r="4.5" fill="#1a1a1a" />
+      <circle cx="26" cy="9" r="4.5" fill="#1a1a1a" />
+      <circle cx="15.5" cy="7.5" r="1.8" fill="#fff" />
+      <circle cx="27.5" cy="7.5" r="1.8" fill="#fff" />
+      {/* Nose */}
+      <ellipse cx="20" cy="14" rx="3" ry="2" fill="#4a6070" />
+      {/* Whiskers */}
+      <line x1="17" y1="14" x2="2" y2="12" stroke="#cdd9e0" strokeWidth="1.2" opacity="0.8" />
+      <line x1="17" y1="15" x2="2" y2="18" stroke="#cdd9e0" strokeWidth="1.2" opacity="0.8" />
+      <line x1="23" y1="14" x2="38" y2="12" stroke="#cdd9e0" strokeWidth="1.2" opacity="0.8" />
+      <line x1="23" y1="15" x2="38" y2="18" stroke="#cdd9e0" strokeWidth="1.2" opacity="0.8" />
+      {/* Front flippers */}
+      <ellipse cx="5" cy="30" rx="5" ry="3" fill="#6a8898" transform="rotate(-20 5 30)" />
+      <ellipse cx="35" cy="30" rx="5" ry="3" fill="#6a8898" transform="rotate(20 35 30)" />
+      {/* Tail flipper */}
+      <ellipse cx="20" cy="40" rx="10" ry="4" fill="#6a8898" />
+    </svg>
+  );
+}
+
+function NarvalsSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Narvals">
+      {/* Horn/tusk (most distinctive feature — long spiral) */}
+      <line x1="12" y1="14" x2="1" y2="1" stroke="#b0c4de" strokeWidth="4" strokeLinecap="round" />
+      <line x1="12" y1="14" x2="3" y2="3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      {/* Body (round, blue-gray) */}
+      <ellipse cx="22" cy="25" rx="16" ry="12" fill="#5b8fa8" />
+      {/* Belly patch */}
+      <ellipse cx="22" cy="27" rx="10" ry="7" fill="#8ab8cc" opacity="0.6" />
+      {/* Head */}
+      <circle cx="13" cy="17" r="11" fill="#5b8fa8" />
+      {/* Eye */}
+      <circle cx="10" cy="13" r="3.5" fill="#1a1a1a" />
+      <circle cx="11" cy="12" r="1.3" fill="#fff" />
+      {/* Smile line */}
+      <path d="M8,18 Q13,22 18,18" fill="none" stroke="#4a7a90" strokeWidth="1.2" strokeLinecap="round" />
+      {/* Dorsal fin */}
+      <polygon points="22,14 18,22 26,22" fill="#4a7a90" />
+      {/* Tail fin */}
+      <ellipse cx="37" cy="25" rx="5" ry="4" fill="#4a7a90" transform="rotate(-30 37 25)" />
+      <ellipse cx="37" cy="31" rx="5" ry="4" fill="#4a7a90" transform="rotate(30 37 31)" />
+      {/* Side flip */}
+      <ellipse cx="22" cy="37" rx="7" ry="3" fill="#4a7a90" />
+    </svg>
+  );
+}
+
+function PolarLacisSvg() {
+  return (
+    <svg className="gc-gnome" viewBox="0 0 40 40" aria-label="Polārlācis">
+      {/* Body (big, white) */}
+      <ellipse cx="20" cy="34" rx="17" ry="9" fill="#f0f8ff" />
+      {/* Head — big round white */}
+      <circle cx="20" cy="19" r="18" fill="#f0f8ff" />
+      {/* Round ears */}
+      <circle cx="5" cy="6" r="8" fill="#f0f8ff" />
+      <circle cx="35" cy="6" r="8" fill="#f0f8ff" />
+      <circle cx="5" cy="6" r="5.5" fill="#d8eef8" />
+      <circle cx="35" cy="6" r="5.5" fill="#d8eef8" />
+      <circle cx="5" cy="6" r="3.5" fill="#e8f4fc" />
+      <circle cx="35" cy="6" r="3.5" fill="#e8f4fc" />
+      {/* Muzzle */}
+      <ellipse cx="20" cy="25" rx="9" ry="7" fill="#daeef8" />
+      {/* Eyes (small dark on white — classic polar bear) */}
+      <circle cx="14" cy="17" r="3.5" fill="#111" />
+      <circle cx="26" cy="17" r="3.5" fill="#111" />
+      <circle cx="15.2" cy="15.8" r="1.2" fill="#fff" />
+      <circle cx="27.2" cy="15.8" r="1.2" fill="#fff" />
+      {/* Big black nose */}
+      <ellipse cx="20" cy="23" rx="5" ry="3.5" fill="#111" />
+    </svg>
+  );
+}
+
+export function IceAvatarSvg({ characterId }) {
+  switch (characterId) {
+    case 'pingvins':   return <PingvinsSvg />;
+    case 'polarlapsa': return <PolarLapsaSvg />;
+    case 'ronis':      return <RonisSvg />;
+    case 'narvals':    return <NarvalsSvg />;
+    case 'polarlacis': return <PolarLacisSvg />;
+    default:           return <ZiemelisSvg />;
+  }
+}
+
 /* ---- Citi vizuālie komponenti ---- */
 
 function ForestWall() {
@@ -474,9 +767,104 @@ function ForestWall() {
   );
 }
 
-function CellBg({ ch }) {
-  if (ch === '#') return <ForestWall />;
+function IceWall() {
+  return (
+    <svg className="gc-wall-tree" viewBox="0 0 40 40" aria-hidden="true">
+      <rect width="40" height="40" fill="#091e36" />
+      {/* Central ice crystal */}
+      <polygon points="20,1 17,14 20,27 23,14" fill="#90d5ff" opacity="0.7" />
+      {/* Side shards */}
+      <polygon points="7,6 3,18 13,18" fill="#6ac0f0" opacity="0.55" />
+      <polygon points="33,6 28,18 37,18" fill="#6ac0f0" opacity="0.55" />
+      <polygon points="2,24 0,36 8,34" fill="#90d5ff" opacity="0.4" />
+      <polygon points="38,24 40,36 32,34" fill="#90d5ff" opacity="0.4" />
+      {/* Crack lines radiating from center */}
+      <line x1="20" y1="27" x2="7" y2="40" stroke="#cce8ff" strokeWidth="1.2" opacity="0.55" />
+      <line x1="20" y1="27" x2="33" y2="40" stroke="#cce8ff" strokeWidth="1.2" opacity="0.55" />
+      <line x1="20" y1="27" x2="0" y2="33" stroke="#cce8ff" strokeWidth="0.9" opacity="0.4" />
+      <line x1="20" y1="27" x2="40" y2="33" stroke="#cce8ff" strokeWidth="0.9" opacity="0.4" />
+      {/* Ice sheen */}
+      <ellipse cx="13" cy="8" rx="5" ry="2.5" fill="#fff" opacity="0.22" transform="rotate(-25 13 8)" />
+    </svg>
+  );
+}
+
+function IglooSvg() {
+  return (
+    <svg className="gc-house" viewBox="0 0 40 40" aria-label="Iglu">
+      {/* Snow ground */}
+      <rect x="0" y="30" width="40" height="10" rx="2" fill="#ddf0ff" />
+      {/* Main dome */}
+      <path d="M4,30 A16,16 0 0,1 36,30Z" fill="#edf6ff" stroke="#a0ccee" strokeWidth="1.2" />
+      {/* Dome ice block lines */}
+      <path d="M9,26 A13,12 0 0,1 31,26" fill="none" stroke="#b8d8f0" strokeWidth="1" opacity="0.8" />
+      <path d="M13,20 A10,9 0 0,1 27,20" fill="none" stroke="#b8d8f0" strokeWidth="1" opacity="0.6" />
+      <line x1="20" y1="14" x2="20" y2="30" stroke="#b8d8f0" strokeWidth="0.8" opacity="0.5" />
+      <line x1="12" y1="16" x2="12" y2="30" stroke="#b8d8f0" strokeWidth="0.8" opacity="0.4" />
+      <line x1="28" y1="16" x2="28" y2="30" stroke="#b8d8f0" strokeWidth="0.8" opacity="0.4" />
+      {/* Entrance tunnel */}
+      <rect x="13" y="25" width="14" height="7" rx="4" fill="#b0c8e0" />
+      {/* Dark doorway */}
+      <ellipse cx="20" cy="30" rx="5" ry="4" fill="#1a3a5c" />
+      {/* Snow sparkles */}
+      <circle cx="9" cy="17" r="1.2" fill="#fff" opacity="0.85" />
+      <circle cx="31" cy="15" r="1" fill="#fff" opacity="0.75" />
+      <circle cx="22" cy="12" r="1.5" fill="#fff" opacity="0.8" />
+    </svg>
+  );
+}
+
+function TeleporterSvg() {
+  return (
+    <svg className="gc-house" viewBox="0 0 40 40" aria-label="Teleports">
+      {/* Dark void */}
+      <circle cx="20" cy="21" r="16" fill="#0d0022" />
+      {/* Outer rings */}
+      <circle cx="20" cy="21" r="15" fill="none" stroke="#9b59b6" strokeWidth="2.5" />
+      <circle cx="20" cy="21" r="12" fill="none" stroke="#8e44ad" strokeWidth="1.5" opacity="0.7" />
+      <circle cx="20" cy="21" r="9" fill="none" stroke="#6c3483" strokeWidth="1" opacity="0.5" />
+      {/* Spiral arms */}
+      <path d="M20,12 Q28,16 25,21 Q22,26 20,30" fill="none" stroke="#e74c3c" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
+      <path d="M20,12 Q12,16 15,21 Q18,26 20,30" fill="none" stroke="#3498db" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
+      {/* Center glow */}
+      <circle cx="20" cy="21" r="5" fill="#8e44ad" opacity="0.7" />
+      <circle cx="20" cy="21" r="3" fill="#e8daff" />
+      {/* Sparkles */}
+      <circle cx="11" cy="13" r="1.5" fill="#e8daff" opacity="0.9" />
+      <circle cx="29" cy="13" r="1.5" fill="#e8daff" opacity="0.85" />
+      <circle cx="7" cy="21"  r="1.2" fill="#d2b4de" opacity="0.75" />
+      <circle cx="33" cy="21" r="1.2" fill="#d2b4de" opacity="0.75" />
+      <circle cx="11" cy="29" r="1.5" fill="#e8daff" opacity="0.7" />
+      <circle cx="29" cy="29" r="1.5" fill="#e8daff" opacity="0.7" />
+    </svg>
+  );
+}
+
+function IcePickupSvg() {
+  return (
+    <svg className="gc-basket" viewBox="0 0 36 36" aria-label="Zivis">
+      {/* Fish body */}
+      <ellipse cx="20" cy="19" rx="11" ry="7" fill="#5bc0de" />
+      {/* Tail fin */}
+      <polygon points="9,19 1,13 1,25" fill="#3a9bbf" />
+      {/* Dorsal fin */}
+      <path d="M16,13 Q19,7 22,13" fill="#3a9bbf" opacity="0.85" />
+      {/* Eye */}
+      <circle cx="27" cy="17" r="2.5" fill="#fff" />
+      <circle cx="27" cy="17" r="1.2" fill="#111" />
+      {/* Belly sheen */}
+      <ellipse cx="20" cy="21" rx="7" ry="3.5" fill="#a8e6f0" opacity="0.55" />
+      {/* Scales */}
+      <path d="M18,15 Q21,18 18,21" fill="none" stroke="#3a9bbf" strokeWidth="0.8" opacity="0.6" />
+      <path d="M13,15 Q16,18 13,21" fill="none" stroke="#3a9bbf" strokeWidth="0.8" opacity="0.6" />
+    </svg>
+  );
+}
+
+function CellBg({ ch, world }) {
+  if (ch === '#') return world === 'ice' ? <IceWall /> : <ForestWall />;
   if (ch === 'T') return <div className="gc-tree">🌲</div>;
+  if (world === 'ice') return <div className="gc-floor gc-floor--ice" />;
   return <div className="gc-floor" />;
 }
 
@@ -528,34 +916,44 @@ const MOVES = {
   ArrowRight: { dx:  1, dy:  0 },
 };
 
-export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
+export default function GnomeGame({
+  onCoinsChange,
+  characterId = 'rukitis',
+  world = 'forest',
+  onTeleport,
+}) {
+  const activeLevels = world === 'ice' ? ICE_LEVELS : FOREST_LEVELS;
+  const isLastForestLevel = (idx) => world === 'forest' && idx === activeLevels.length - 1;
+
   const [levelIdx, setLevelIdx] = useState(0);
-  const [levelData, setLevelData] = useState(() => parseLevel(LEVELS[0].map));
-  const [gnome, setGnome] = useState(() => parseLevel(LEVELS[0].map).gnome);
+  const [levelData, setLevelData] = useState(() => parseLevel(activeLevels[0].map));
+  const [gnome, setGnome] = useState(() => parseLevel(activeLevels[0].map).gnome);
   const [won, setWon] = useState(false);
   const [allDone, setAllDone] = useState(false);
+  const [teleporting, setTeleporting] = useState(false);
   const [steps, setSteps] = useState(0);
   const [earnedThisLevel, setEarnedThisLevel] = useState(false);
 
-  const [remainingBaskets, setRemainingBaskets] = useState(() => initBaskets(0));
+  const [remainingBaskets, setRemainingBaskets] = useState(() => initBaskets(activeLevels, 0));
   const [basketsCollected, setBasketsCollected] = useState(0);
   const [lastCollected, setLastCollected] = useState(null);
 
-  const totalLevels = LEVELS.length;
-  const totalBaskets = LEVELS[levelIdx].baskets.length;
+  const totalLevels = activeLevels.length;
+  const totalBaskets = activeLevels[levelIdx].baskets.length;
 
   const loadLevel = useCallback((idx) => {
-    const data = parseLevel(LEVELS[idx].map);
+    const data = parseLevel(activeLevels[idx].map);
     setLevelData(data);
     setGnome(data.gnome);
     setWon(false);
+    setTeleporting(false);
     setSteps(0);
     setEarnedThisLevel(false);
     setAllDone(false);
-    setRemainingBaskets(initBaskets(idx));
+    setRemainingBaskets(initBaskets(activeLevels, idx));
     setBasketsCollected(0);
     setLastCollected(null);
-  }, []);
+  }, [activeLevels]);
 
   useEffect(() => {
     if (!lastCollected) return undefined;
@@ -564,7 +962,7 @@ export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
   }, [lastCollected]);
 
   const tryMove = useCallback((key) => {
-    if (won) return;
+    if (won || teleporting) return;
     const move = MOVES[key];
     if (!move) return;
 
@@ -581,21 +979,24 @@ export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
         onCoinsChange?.(BASKET_VALUE);
       }
 
-      const atHouse = nx === levelData.house.x && ny === levelData.house.y;
-      if (atHouse && !earnedThisLevel) {
-        setEarnedThisLevel(true);
-        setWon(true);
-        if (levelIdx >= totalLevels - 1) setAllDone(true);
-        onCoinsChange?.(LEVELS[levelIdx].reward);
-      } else if (atHouse) {
-        setWon(true);
-        if (levelIdx >= totalLevels - 1) setAllDone(true);
+      const atGoal = nx === levelData.house.x && ny === levelData.house.y;
+      if (atGoal) {
+        if (!earnedThisLevel) {
+          setEarnedThisLevel(true);
+          onCoinsChange?.(activeLevels[levelIdx].reward);
+        }
+        if (isLastForestLevel(levelIdx)) {
+          setTeleporting(true);
+        } else {
+          setWon(true);
+          if (levelIdx >= totalLevels - 1) setAllDone(true);
+        }
       }
 
       return { x: nx, y: ny };
     });
     setSteps((s) => s + 1);
-  }, [won, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, onCoinsChange]);
+  }, [won, teleporting, levelData, remainingBaskets, earnedThisLevel, levelIdx, totalLevels, activeLevels, onCoinsChange]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -613,23 +1014,26 @@ export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
 
   const { grid, house, cols, rows } = levelData;
   const basketBonus = basketsCollected * BASKET_VALUE;
+  const currentLevel = activeLevels[levelIdx];
+  const showTeleporterGoal = isLastForestLevel(levelIdx);
+  const AvatarComp = world === 'ice' ? IceAvatarSvg : AvatarSvg;
 
   return (
-    <div className="gnome-game">
+    <div className={`gnome-game${world === 'ice' ? ' gnome-game--ice' : ''}`}>
       <div className="gnome-game__header">
-        <span className="gnome-game__level-badge">{LEVELS[levelIdx].label}</span>
+        <span className="gnome-game__level-badge">{currentLevel.label}</span>
         <span className="gnome-game__steps">Soļi: {steps}</span>
-        <span className="gnome-game__baskets-hud" title="Savāktie groziņi">
-          🧺 {basketsCollected}/{totalBaskets}
+        <span className="gnome-game__baskets-hud" title="Savāktie laupījumi">
+          {world === 'ice' ? '🐟' : '🧺'} {basketsCollected}/{totalBaskets}
           {basketsCollected > 0 && (
             <span className="gnome-game__basket-bonus"> +{basketBonus} ◉</span>
           )}
         </span>
-        <span className="gnome-game__reward-label">Balva: {LEVELS[levelIdx].reward} ◉</span>
+        <span className="gnome-game__reward-label">Balva: {currentLevel.reward} ◉</span>
       </div>
 
       <div
-        className="gnome-grid"
+        className={`gnome-grid${world === 'ice' ? ' gnome-grid--ice' : ''}`}
         style={{
           gridTemplateColumns: `repeat(${cols}, ${CELL}px)`,
           gridTemplateRows:    `repeat(${rows}, ${CELL}px)`,
@@ -638,16 +1042,16 @@ export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
         {grid.map((row, y) =>
           row.map((ch, x) => {
             const isGnome = gnome.x === x && gnome.y === y;
-            const isHouse = house.x === x && house.y === y;
+            const isGoal  = house.x === x && house.y === y;
             const bk = `${x},${y}`;
             const hasBasket    = remainingBaskets.has(bk);
             const justCollected = lastCollected?.x === x && lastCollected?.y === y;
             return (
               <div key={bk} className="gnome-cell">
-                <CellBg ch={ch} />
-                {isHouse && <HouseSvg />}
-                {hasBasket && <BasketSvg />}
-                {isGnome && <AvatarSvg characterId={characterId} />}
+                <CellBg ch={ch} world={world} />
+                {isGoal && (showTeleporterGoal ? <TeleporterSvg /> : world === 'ice' ? <IglooSvg /> : <HouseSvg />)}
+                {hasBasket && (world === 'ice' ? <IcePickupSvg /> : <BasketSvg />)}
+                {isGnome && <AvatarComp characterId={characterId} />}
                 <CollectFlash collected={justCollected} />
               </div>
             );
@@ -655,7 +1059,7 @@ export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
         )}
       </div>
 
-      <div className="gnome-dpad" aria-label="Kustības vadība">
+      <div className={`gnome-dpad${world === 'ice' ? ' gnome-dpad--ice' : ''}`} aria-label="Kustības vadība">
         <div className="gnome-dpad__row">
           <button type="button" className="gnome-dpad__btn" onClick={() => tryMove('ArrowUp')} aria-label="Uz augšu">▲</button>
         </div>
@@ -669,22 +1073,46 @@ export default function GnomeGame({ onCoinsChange, characterId = 'rukitis' }) {
         </div>
       </div>
 
+      {teleporting && (
+        <div className="gnome-game__teleport-overlay" role="status">
+          <p className="gnome-game__win-title">✨ Teleports atrasts!</p>
+          <p className="gnome-game__win-sub">
+            Balva: +{currentLevel.reward} ◉
+            {basketsCollected > 0 && ` · Groziņi: +${basketBonus} ◉`}
+          </p>
+          <p className="gnome-game__teleport-hint">❄️ Ledus pasaule gaida...</p>
+          <button
+            type="button"
+            className="gnome-game__btn gnome-game__btn--teleport"
+            onClick={() => onTeleport?.()}
+          >
+            Doties uz Ledus pasauli →
+          </button>
+        </div>
+      )}
+
       {won && (
-        <div className="gnome-game__win" role="status">
+        <div className={`gnome-game__win${world === 'ice' ? ' gnome-game__win--ice' : ''}`} role="status">
           {allDone ? (
             <>
-              <p className="gnome-game__win-title">🏠 Visi līmeņi pabeigti!</p>
-              <p className="gnome-game__win-sub">Groziņi: {basketsCollected}/{totalBaskets} · Bonuss: +{basketBonus} ◉</p>
+              <p className="gnome-game__win-title">
+                {world === 'ice' ? '🧊 Ledus pasaule iekarota!' : '🏠 Visi meža līmeņi pabeigti!'}
+              </p>
+              <p className="gnome-game__win-sub">
+                {world === 'ice' ? 'Zivis' : 'Groziņi'}: {basketsCollected}/{totalBaskets} · Bonuss: +{basketBonus} ◉
+              </p>
               <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={restartAll}>
                 Spēlēt no sākuma
               </button>
             </>
           ) : (
             <>
-              <p className="gnome-game__win-title">🏠 Mājiņa sasniegta!</p>
+              <p className="gnome-game__win-title">
+                {world === 'ice' ? '🧊 Iglu sasniegts!' : '🏠 Mājiņa sasniegta!'}
+              </p>
               <p className="gnome-game__win-sub">
-                Balva: +{LEVELS[levelIdx].reward} ◉
-                {basketsCollected > 0 && ` · Groziņi: +${basketBonus} ◉ (${basketsCollected}/${totalBaskets})`}
+                Balva: +{currentLevel.reward} ◉
+                {basketsCollected > 0 && ` · ${world === 'ice' ? 'Zivis' : 'Groziņi'}: +${basketBonus} ◉ (${basketsCollected}/${totalBaskets})`}
                 {' · '}Soļi: {steps}
               </p>
               <button type="button" className="gnome-game__btn gnome-game__btn--primary" onClick={goNext}>
