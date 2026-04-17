@@ -246,42 +246,71 @@ export default function DinoGame() {
       ) {
         return;
       }
-      const fg = state.night ? '#f7f7f7' : '#535353';
-      ctx.fillStyle = fg;
+      const denim = state.night ? '#7a9bd1' : '#4a6fa5';
+      const denimDark = state.night ? '#4f6fa0' : '#2c4870';
+      const belt = state.night ? '#d8d8d8' : '#1f1f1f';
+      const button = state.night ? '#f4d76a' : '#c69a2c';
+      const stitch = state.night ? '#d6c98a' : '#a07b1c';
 
       if (d.ducking) {
+        const x = d.x;
         const y = GROUND_Y - DINO.duckHeight;
-        ctx.fillRect(d.x, y + 8, 40, 16);
-        ctx.fillRect(d.x + 30, y, 24, 14);
-        ctx.fillRect(d.x + 48, y + 4, 4, 4);
-        ctx.clearRect(d.x + 46, y + 6, 2, 2);
+        ctx.fillStyle = denim;
+        ctx.fillRect(x + 2, y, 50, 6);
+        ctx.fillStyle = belt;
+        ctx.fillRect(x + 2, y + 6, 50, 2);
+        ctx.fillStyle = button;
+        ctx.fillRect(x + 26, y + 2, 3, 2);
+        ctx.fillStyle = denim;
         if (d.legFrame === 0) {
-          ctx.fillRect(d.x + 12, y + 24, 6, 4);
-          ctx.fillRect(d.x + 22, y + 22, 6, 4);
+          ctx.fillRect(x + 4, y + 8, 22, 20);
+          ctx.fillRect(x + 28, y + 8, 22, 18);
         } else {
-          ctx.fillRect(d.x + 14, y + 22, 6, 4);
-          ctx.fillRect(d.x + 24, y + 24, 6, 4);
+          ctx.fillRect(x + 4, y + 8, 22, 18);
+          ctx.fillRect(x + 28, y + 8, 22, 20);
         }
+        ctx.fillStyle = denimDark;
+        ctx.fillRect(x + 26, y + 8, 2, 20);
+        ctx.fillStyle = stitch;
+        ctx.fillRect(x + 4, y + 10, 22, 1);
+        ctx.fillRect(x + 28, y + 10, 22, 1);
       } else {
         const x = d.x;
         const y = d.y;
-        ctx.fillRect(x + 18, y, 22, 22);
-        ctx.fillRect(x + 36, y + 4, 4, 4);
-        ctx.clearRect(x + 34, y + 6, 2, 2);
-        ctx.fillRect(x + 18, y + 22, 20, 14);
-        ctx.fillRect(x + 10, y + 20, 10, 10);
-        ctx.fillRect(x + 14, y + 28, 18, 12);
-        ctx.fillRect(x + 4, y + 16, 10, 8);
+        ctx.fillStyle = denim;
+        ctx.fillRect(x + 2, y, 42, 8);
+        ctx.fillStyle = belt;
+        ctx.fillRect(x + 2, y + 8, 42, 3);
+        ctx.fillStyle = button;
+        ctx.fillRect(x + 20, y + 9, 4, 2);
+        ctx.fillStyle = denim;
         if (d.jumping) {
-          ctx.fillRect(x + 16, y + 40, 6, 6);
-          ctx.fillRect(x + 26, y + 40, 6, 6);
+          ctx.fillRect(x + 4, y + 11, 18, 35);
+          ctx.fillRect(x + 24, y + 11, 18, 35);
+          ctx.fillStyle = denim;
+          ctx.fillRect(x + 2, y + 44, 20, 4);
+          ctx.fillRect(x + 24, y + 44, 20, 4);
         } else if (d.legFrame === 0) {
-          ctx.fillRect(x + 14, y + 40, 6, 8);
-          ctx.fillRect(x + 26, y + 40, 4, 4);
+          ctx.fillRect(x + 4, y + 11, 18, 37);
+          ctx.fillRect(x + 24, y + 11, 18, 35);
+          ctx.fillStyle = denim;
+          ctx.fillRect(x + 2, y + 46, 20, 2);
+          ctx.fillRect(x + 24, y + 44, 20, 2);
         } else {
-          ctx.fillRect(x + 14, y + 40, 4, 4);
-          ctx.fillRect(x + 26, y + 40, 6, 8);
+          ctx.fillRect(x + 4, y + 11, 18, 35);
+          ctx.fillRect(x + 24, y + 11, 18, 37);
+          ctx.fillStyle = denim;
+          ctx.fillRect(x + 2, y + 44, 20, 2);
+          ctx.fillRect(x + 24, y + 46, 20, 2);
         }
+        ctx.fillStyle = denimDark;
+        ctx.fillRect(x + 22, y + 11, 2, 32);
+        ctx.fillStyle = stitch;
+        ctx.fillRect(x + 4, y + 13, 18, 1);
+        ctx.fillRect(x + 24, y + 13, 18, 1);
+        ctx.fillStyle = denimDark;
+        ctx.fillRect(x + 6, y + 16, 8, 6);
+        ctx.fillRect(x + 30, y + 16, 8, 6);
       }
     };
 
