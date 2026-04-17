@@ -16,7 +16,6 @@ export const CHARACTERS = [
   { id: 'lacis',   label: 'Lācis',       price: 1500, desc: 'Meža lielais saimnieks' },
   { id: 'lusis',   label: 'Lūsis',       price: 2000, desc: 'Karaliskais plankumainais' },
   { id: 'alnis',   label: 'Alnis',       price: 3000, desc: 'Ragainais meža milzis' },
-  { id: 'lauma',   label: 'Meža Lauma',  price: 5000, desc: 'Noslēpumainā meža ragana' },
 ];
 
 function loadCoins() {
