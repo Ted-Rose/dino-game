@@ -29,6 +29,7 @@ function randomRange(min, max) {
 export default function DinoGame() {
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
+  const settingsRef = useRef({ birdLevel: 3, cactusLevel: 7 });
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem('dino-high-score');
@@ -37,6 +38,12 @@ export default function DinoGame() {
   const [gameOver, setGameOver] = useState(false);
   const [started, setStarted] = useState(false);
   const [lives, setLives] = useState(INITIAL_LIVES);
+  const [birdLevel, setBirdLevel] = useState(3);
+  const [cactusLevel, setCactusLevel] = useState(7);
+
+  useEffect(() => {
+    settingsRef.current = { birdLevel, cactusLevel };
+  }, [birdLevel, cactusLevel]);
 
   useEffect(() => {
     const initialState = {
@@ -81,18 +88,17 @@ export default function DinoGame() {
     const state = stateRef.current;
 
     const spawnObstacle = () => {
-      const types = ['cactus-small', 'cactus-large', 'bird'];
-      const weights = state.speed > 8 ? [0.4, 0.3, 0.3] : [0.6, 0.4, 0];
-      let roll = Math.random();
-      let idx = 0;
-      for (let i = 0; i < weights.length; i++) {
-        if (roll < weights[i]) {
-          idx = i;
-          break;
-        }
-        roll -= weights[i];
+      const { birdLevel, cactusLevel } = settingsRef.current;
+      const total = birdLevel + cactusLevel;
+      if (total === 0) return;
+
+      const birdChance = birdLevel / total;
+      let type;
+      if (Math.random() < birdChance) {
+        type = 'bird';
+      } else {
+        type = Math.random() < 0.6 ? 'cactus-small' : 'cactus-large';
       }
-      const type = types[idx];
 
       if (type === 'cactus-small') {
         const count = Math.floor(randomRange(1, 4));
@@ -575,6 +581,34 @@ export default function DinoGame() {
         <span>Rekords: {highScore}</span>
         {gameOver && <span className="game-over-text">Spēle galā!</span>}
         {!started && !gameOver && <span>Spied Space, lai sāktu</span>}
+      </div>
+      <div className="controls">
+        <label className="control">
+          <span className="control-label">
+            Putni <strong>{birdLevel}</strong>
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="10"
+            step="1"
+            value={birdLevel}
+            onChange={(e) => setBirdLevel(Number(e.target.value))}
+          />
+        </label>
+        <label className="control">
+          <span className="control-label">
+            Kaktusi <strong>{cactusLevel}</strong>
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="10"
+            step="1"
+            value={cactusLevel}
+            onChange={(e) => setCactusLevel(Number(e.target.value))}
+          />
+        </label>
       </div>
     </div>
   );
