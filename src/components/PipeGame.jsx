@@ -416,20 +416,23 @@ function RockObstacle() {
   );
 }
 
-function MovingGateOverlay({ closed }) {
+/** Propellers ar ~3 lauciņu diametru (vizuāli izplešas pāri kaimiņu šūnām), nepārtraukti griežas. */
+function PropellerOverlay({ closed }) {
   return (
     <div
-      className={`moving-gate-overlay${closed ? ' moving-gate-overlay--closed' : ' moving-gate-overlay--open'}`}
+      className={`propeller-overlay${closed ? ' propeller-overlay--closed' : ' propeller-overlay--open'}`}
       aria-hidden="true"
     >
-      <div className="moving-gate-overlay__bars">
-        <span />
-        <span />
-        <span />
-      </div>
-      <span className="moving-gate-overlay__hint">
-        {closed ? 'Aizvērts' : 'Vaļā'}
-      </span>
+      <svg className="propeller-svg" viewBox="0 0 100 100">
+        <circle className="propeller-svg__hub" cx="50" cy="50" r="9" />
+        <g className="propeller-svg__spin">
+          <ellipse className="propeller-svg__blade" cx="50" cy="26" rx="13" ry="22" />
+          <ellipse className="propeller-svg__blade" cx="50" cy="74" rx="13" ry="22" />
+          <ellipse className="propeller-svg__blade" cx="26" cy="50" rx="22" ry="13" />
+          <ellipse className="propeller-svg__blade" cx="74" cy="50" rx="22" ry="13" />
+        </g>
+      </svg>
+      <span className="propeller-overlay__hint">{closed ? 'Slēgts' : 'Vaļā'}</span>
     </div>
   );
 }
@@ -650,7 +653,7 @@ export default function PipeGame() {
     const { ok, pathCells: cells } = findReachable(grid, cfg, gatePhase, gateRubble);
     if (!ok) {
       setError(
-        'Ceļš nav gatavs vai kustīgais šķērslis šobrīd bloķē. Pārbaudi vārtu fāzi un caurules.',
+        'Ceļš nav gatavs vai propelleris šobrīd bloķē. Pārbaudi fāzi un caurules.',
       );
       setSuccess(false);
       setFlowing(false);
@@ -684,8 +687,9 @@ export default function PipeGame() {
         <strong>Šajā līmenī</strong> ceļā ir <strong>nekustīgi akmeņi</strong> un{' '}
         <strong>kustīgie šķēršļi</strong>, kas pārvietojas pa lauciņiem (katru ~2 s soli; katram savs ceļš).
         Ja caurule nonāk uz šūnu, kur šķērslis ir šajā brīdī — tā <strong>sabrūk</strong> un šūna kļūst par
-        akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa jau stāv caurule. Ūdens plūst
-        tikai tad, kad vārti šūnā ir <strong>atvērti</strong> (zaļš).
+        akmeni (daļa zaudēta). Katru soli tas pats notiek, ja uz šķēršļa lauciņa jau stāv caurule.{' '}
+        <strong>Propelleri</strong> griežas (≈3 lauciņu diametrā); ūdens plūst tikai tad, kad fāze ir{' '}
+        <strong>vaļā</strong> ceļam (zaļš).
       </>
     ) : null;
 
@@ -801,21 +805,21 @@ export default function PipeGame() {
               }
 
               const hasMovingGate = moverAtCell(x, y, cfg, gatePhase) != null;
-              const gateClosed = hasMovingGate && !gateOpenAt(x, y);
+              const propBlocked = hasMovingGate && !gateOpenAt(x, y);
               const cell = grid[y][x];
 
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`pipe-cell pipe-cell--build${hasMovingGate ? ' pipe-cell--has-gate' : ''}${gateClosed ? ' pipe-cell--gate-closed' : ''}${onPath ? ' pipe-cell--path' : ''}${cell ? ' pipe-cell--filled' : ''}`}
+                  className={`pipe-cell pipe-cell--build${hasMovingGate ? ' pipe-cell--has-propeller' : ''}${propBlocked ? ' pipe-cell--prop-blocked' : ''}${onPath ? ' pipe-cell--path' : ''}${cell ? ' pipe-cell--filled' : ''}`}
                   onClick={(e) => handleCellPointerDown(x, y, e)}
                   onContextMenu={(e) => handleCellPointerDown(x, y, e)}
                   aria-label={
                     cell
                       ? `Caurule ${cell.kind}, griezt`
                       : hasMovingGate
-                        ? 'Lauciņš ar kustīgiem vārtiem'
+                        ? 'Lauciņš ar propelleri'
                         : 'Tukšs lauciņš'
                   }
                 >
@@ -827,7 +831,7 @@ export default function PipeGame() {
                       lit={onPath}
                     />
                   )}
-                  {hasMovingGate && <MovingGateOverlay closed={gateClosed} />}
+                  {hasMovingGate && <PropellerOverlay closed={propBlocked} />}
                 </button>
               );
             }),
@@ -882,8 +886,8 @@ export default function PipeGame() {
       )}
 
       <p className="pipe-game__legend" aria-hidden="true">
-        Pelēkie akmeņi neapgāžami. Šķēršļi klīst pa lauciņiem; sarkans = ūdens neplūst; zaļš = vaļā.
-        Kontakts salauž cauruli → akmenis.
+        Pelēkie akmeņi neapgāžami. Propelleri klīst pa lauciņiem (≈3 lauciņu platums); sarkans = ūdens
+        neplūst; zaļš = vaļā. Kontakts salauž cauruli → akmenis.
       </p>
     </div>
   );

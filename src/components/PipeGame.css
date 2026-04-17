@@ -259,6 +259,7 @@
 }
 
 .pipe-game__board-wrap {
+  overflow: visible;
   display: flex;
   justify-content: center;
   padding: 8px;
@@ -283,6 +284,7 @@
   display: grid;
   gap: 3px;
   padding: 4px;
+  overflow: visible;
 }
 
 .pipe-cell {
@@ -349,88 +351,98 @@
   box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
 }
 
-.pipe-cell--has-gate {
+.pipe-cell--has-propeller {
   position: relative;
+  overflow: visible;
+  z-index: 2;
 }
 
-.pipe-cell--gate-closed {
-  filter: brightness(0.97);
+.pipe-cell--prop-blocked {
+  filter: brightness(0.96);
 }
 
-.moving-gate-overlay {
+/** Propeller vizuāli aptver ~3 lauciņu diametru (katrs lauciņš = 100% platums) */
+.propeller-overlay {
   position: absolute;
-  inset: 0;
-  border-radius: 6px;
+  left: 50%;
+  top: 50%;
+  width: calc(300% + 6px);
+  height: calc(300% + 6px);
+  margin-left: calc(-150% - 3px);
+  margin-top: calc(-150% - 3px);
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  padding: 2px;
-  pointer-events: none;
-  transition:
-    background 0.35s ease,
-    box-shadow 0.35s ease;
-}
-
-.moving-gate-overlay__bars {
-  display: flex;
-  gap: 5px;
   justify-content: center;
-  align-items: flex-end;
-  height: 42%;
+  transition:
+    filter 0.35s ease,
+    opacity 0.35s ease;
+}
+
+.propeller-svg {
   width: 100%;
-}
-
-.moving-gate-overlay__bars span {
-  display: block;
-  width: 8px;
   height: 100%;
-  border-radius: 2px;
-  animation: gate-bob 1.2s ease-in-out infinite;
+  overflow: visible;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-.moving-gate-overlay__bars span:nth-child(2) {
-  animation-delay: 0.15s;
+.propeller-svg__hub {
+  fill: #5c6670;
+  stroke: #3d454d;
+  stroke-width: 1;
 }
 
-.moving-gate-overlay__bars span:nth-child(3) {
-  animation-delay: 0.3s;
+.propeller-svg__spin {
+  transform-origin: 50px 50px;
+  animation: propeller-spin 0.85s linear infinite;
 }
 
-.moving-gate-overlay--closed .moving-gate-overlay__bars span {
-  background: linear-gradient(180deg, #e74c3c, #922b21);
-  box-shadow: 0 0 8px rgba(231, 76, 60, 0.55);
+.propeller-svg__blade {
+  stroke: rgba(0, 0, 0, 0.15);
+  stroke-width: 0.5;
 }
 
-.moving-gate-overlay--open .moving-gate-overlay__bars span {
-  background: linear-gradient(180deg, #58d68d, #239b56);
-  box-shadow: 0 0 6px rgba(46, 204, 113, 0.45);
+.propeller-overlay--closed .propeller-svg__blade {
+  fill: #e74c3c;
 }
 
-.moving-gate-overlay__hint {
-  font-size: 8px;
+.propeller-overlay--open .propeller-svg__blade {
+  fill: #2ecc71;
+}
+
+.propeller-overlay--closed {
+  opacity: 0.98;
+}
+
+.propeller-overlay--closed .propeller-svg {
+  filter: drop-shadow(0 0 6px rgba(192, 57, 43, 0.45));
+}
+
+.propeller-overlay--open .propeller-svg {
+  filter: drop-shadow(0 0 5px rgba(39, 174, 96, 0.4));
+}
+
+.propeller-overlay__hint {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 7px;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 2px;
-  color: rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgba(30, 30, 30, 0.65);
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
-.moving-gate-overlay--closed {
-  background: rgba(231, 76, 60, 0.12);
-}
-
-.moving-gate-overlay--open {
-  background: rgba(46, 204, 113, 0.1);
-}
-
-@keyframes gate-bob {
-  0%,
-  100% {
-    transform: translateY(0);
+@keyframes propeller-spin {
+  from {
+    transform: rotate(0deg);
   }
-  50% {
-    transform: translateY(-3px);
+  to {
+    transform: rotate(360deg);
   }
 }
 
