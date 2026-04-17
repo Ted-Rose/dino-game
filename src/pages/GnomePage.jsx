@@ -6,12 +6,12 @@ const OWNED_KEY    = 'gnome-owned-chars';
 const SELECTED_KEY = 'gnome-selected-char';
 
 export const CHARACTERS = [
-  { id: 'rukitis', label: 'Rūķītis',    price: 0,   desc: 'Mazais meža gājējs' },
-  { id: 'ezis',    label: 'Ezis',        price: 50,  desc: 'Dzeloņainais draugs' },
-  { id: 'vavere',  label: 'Vāvere',      price: 90,  desc: 'Žiglā riekstu ražotāja' },
-  { id: 'puce',    label: 'Pūce',        price: 130, desc: 'Gudrā nakts gana' },
-  { id: 'lusis',   label: 'Lūsis',       price: 200, desc: 'Mežu karaliskais sargs' },
-  { id: 'lauma',   label: 'Meža Lauma',  price: 280, desc: 'Noslēpumainais meža gars' },
+  { id: 'rukitis', label: 'Rūķītis',    price: 0,    desc: 'Mazais meža gājējs' },
+  { id: 'ezis',    label: 'Ezis',        price: 100,  desc: 'Dzeloņainais draugs' },
+  { id: 'vavere',  label: 'Vāvere',      price: 300,  desc: 'Žiglā riekstu ražotāja' },
+  { id: 'puce',    label: 'Pūce',        price: 700,  desc: 'Gudrā nakts gana' },
+  { id: 'lusis',   label: 'Lūsis',       price: 1500, desc: 'Mežu karaliskais sargs' },
+  { id: 'lauma',   label: 'Meža Lauma',  price: 5000, desc: 'Noslēpumainais meža gars' },
 ];
 
 function loadCoins() {
