@@ -28,7 +28,7 @@ function mulberry32(a) {
   };
 }
 
-export default function Forest99Game({ onHudUpdate, onGameEnd }) {
+export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) {
   const wrapRef = useRef(null);
   const hudThrottle = useRef(0);
   const endedRef = useRef(false);
@@ -248,6 +248,12 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     player.add(camera);
 
     const keys = {};
+
+    function mergeKey(code) {
+      const ti = touchInputRef?.current;
+      return !!(keys[code] || (ti?.enabled && ti.keys?.[code]));
+    }
+
     const onKeyDown = (e) => {
       keys[e.code] = true;
       if (e.code === 'Escape' && document.pointerLockElement === renderer.domElement) {
@@ -264,6 +270,7 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     const euler = new THREE.Euler(0, 0, 0, 'YXZ');
 
     const onMouseMove = (e) => {
+      if (touchInputRef?.current?.enabled) return;
       if (document.pointerLockElement !== renderer.domElement) return;
       const sens = 0.0022;
       yaw -= e.movementX * sens;
@@ -274,6 +281,7 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
 
     const onClick = () => {
       audio.resume();
+      if (touchInputRef?.current?.enabled) return;
       if (document.pointerLockElement !== renderer.domElement) {
         renderer.domElement.requestPointerLock();
       }
@@ -552,13 +560,13 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
 
     function tryMerchantBuy() {
       if (distMerchant() > MERCHANT_DIST) return;
-      if (keys.Digit1 && !prevDigit1 && coins >= 6) {
+      if (mergeKey('Digit1') && !prevDigit1 && coins >= 6) {
         coins -= 6;
         berries += 3;
         audio.coin();
         actionCd = ACTION_CD * 0.6;
       }
-      if (keys.Digit2 && !prevDigit2 && coins >= 10) {
+      if (mergeKey('Digit2') && !prevDigit2 && coins >= 10) {
         coins -= 10;
         wood += 4;
         audio.coin();
@@ -684,23 +692,34 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
 
       storyTimer = Math.max(0, storyTimer - dt);
 
-      if (keys.KeyE && !prevE) tryInteractHarvest();
-      if (keys.KeyF && !prevF) tryFeedFire();
-      if (keys.KeyQ && !prevQ) tryCraftSpear();
-      if (keys.KeyR && !prevR) tryEatBerry();
-      if (keys.KeyH && !prevH) tryShelterUpgrade();
-      if (keys.Space && !prevSpace) tryMeleeAttack();
+      const tiLook = touchInputRef?.current;
+      if (tiLook?.enabled && tiLook.look) {
+        const sens = 0.0028;
+        yaw -= tiLook.look.dx * sens;
+        pitch -= tiLook.look.dy * sens;
+        tiLook.look.dx = 0;
+        tiLook.look.dy = 0;
+        const limLook = Math.PI / 2 - 0.08;
+        pitch = Math.max(-limLook, Math.min(limLook, pitch));
+      }
+
+      if (mergeKey('KeyE') && !prevE) tryInteractHarvest();
+      if (mergeKey('KeyF') && !prevF) tryFeedFire();
+      if (mergeKey('KeyQ') && !prevQ) tryCraftSpear();
+      if (mergeKey('KeyR') && !prevR) tryEatBerry();
+      if (mergeKey('KeyH') && !prevH) tryShelterUpgrade();
+      if (mergeKey('Space') && !prevSpace) tryMeleeAttack();
 
       tryMerchantBuy();
 
-      prevE = keys.KeyE;
-      prevF = keys.KeyF;
-      prevQ = keys.KeyQ;
-      prevR = keys.KeyR;
-      prevH = keys.KeyH;
-      prevSpace = keys.Space;
-      prevDigit1 = keys.Digit1;
-      prevDigit2 = keys.Digit2;
+      prevE = mergeKey('KeyE');
+      prevF = mergeKey('KeyF');
+      prevQ = mergeKey('KeyQ');
+      prevR = mergeKey('KeyR');
+      prevH = mergeKey('KeyH');
+      prevSpace = mergeKey('Space');
+      prevDigit1 = mergeKey('Digit1');
+      prevDigit2 = mergeKey('Digit2');
 
       actionCd = Math.max(0, actionCd - dt);
       attackCd = Math.max(0, attackCd - dt);
@@ -716,25 +735,36 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       right.y = 0;
       right.normalize();
 
-      let sprint = keys.ShiftLeft && stamina > 2;
+      let sprint = mergeKey('ShiftLeft') && stamina > 2;
       let mx = 0;
       let mz = 0;
-      if (keys.KeyW) {
+      if (mergeKey('KeyW')) {
         mx += forward.x;
         mz += forward.z;
       }
-      if (keys.KeyS) {
+      if (mergeKey('KeyS')) {
         mx -= forward.x;
         mz -= forward.z;
       }
-      if (keys.KeyA) {
+      if (mergeKey('KeyA')) {
         mx -= right.x;
         mz -= right.z;
       }
-      if (keys.KeyD) {
+      if (mergeKey('KeyD')) {
         mx += right.x;
         mz += right.z;
       }
+
+      const tiJoy = touchInputRef?.current;
+      if (tiJoy?.enabled && tiJoy.joystick) {
+        const jx = tiJoy.joystick.x;
+        const jy = tiJoy.joystick.y;
+        if (jx * jx + jy * jy > 0.012) {
+          mx += forward.x * (-jy) + right.x * jx;
+          mz += forward.z * (-jy) + right.z * jx;
+        }
+      }
+
       const len = Math.hypot(mx, mz);
       let speed = sprint ? 10.2 : 6;
       if (len > 0) {
@@ -902,7 +932,7 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       emberGeo.dispose();
       emberMat.dispose();
     };
-  }, []);
+  }, [touchInputRef]);
 
   return <div className="forest99-canvas-wrap" ref={wrapRef} />;
 }

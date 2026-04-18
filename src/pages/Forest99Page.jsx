@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Forest99Game from '../components/Forest99Game';
+import Forest99TouchControls from '../components/Forest99TouchControls';
 
 function formatTime(sec) {
   const s = Math.max(0, Math.floor(sec));
@@ -38,6 +39,45 @@ export default function Forest99Page() {
   const [session, setSession] = useState(0);
   const [end, setEnd] = useState(null);
   const [hud, setHud] = useState(defaultHud);
+  const [touchUi, setTouchUi] = useState(false);
+
+  const touchInputRef = useRef({
+    enabled: false,
+    joystick: { x: 0, y: 0 },
+    look: { dx: 0, dy: 0 },
+    keys: {},
+  });
+
+  useEffect(() => {
+    touchInputRef.current.enabled = touchUi;
+  }, [touchUi]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    const upd = () => setTouchUi(mq.matches || window.innerWidth < 820);
+    upd();
+    mq.addEventListener('change', upd);
+    window.addEventListener('resize', upd);
+    return () => {
+      mq.removeEventListener('change', upd);
+      window.removeEventListener('resize', upd);
+    };
+  }, []);
+
+  useEffect(() => {
+    const m = document.querySelector('meta[name="viewport"]');
+    if (!m) return undefined;
+    const prev = m.getAttribute('content');
+    if (touchUi) {
+      m.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no'
+      );
+    }
+    return () => {
+      if (prev != null) m.setAttribute('content', prev);
+    };
+  }, [touchUi]);
 
   const handleHud = useCallback((next) => setHud(next), []);
 
@@ -51,8 +91,10 @@ export default function Forest99Page() {
   const phaseLabel = hud.isDay ? 'Diena' : 'Nakts';
 
   return (
-    <div className="app page-forest99">
-      <Forest99Game key={session} onHudUpdate={handleHud} onGameEnd={handleEnd} />
+    <div className={`app page-forest99${touchUi ? ' page-forest99--touch' : ''}`}>
+      <Forest99Game key={session} touchInputRef={touchInputRef} onHudUpdate={handleHud} onGameEnd={handleEnd} />
+
+      {touchUi && <Forest99TouchControls touchInputRef={touchInputRef} nearMerchant={hud.nearMerchant} />}
 
       {hud.storyLine && (
         <div className="forest99-story" role="status">
@@ -134,7 +176,9 @@ export default function Forest99Page() {
       </div>
 
       <p className="forest99-help">
-        WASD · Shift skriet · E — lasīt kokus/akmeņus/krūmus · Space uzbrukt · F/Q/R/H · Peles skats · Ēnas naktī
+        {touchUi
+          ? 'Spieķis — kustība · velc labajā pusē — skats · Kr/E/F/Q/R/H/Sk · 1/2 pie tirgotāja'
+          : 'WASD · Shift skriet · E — lasīt · Space uzbrukt · F/Q/R/H · pele · Ēnas naktī'}
       </p>
 
       {end === 'win' && (
