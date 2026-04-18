@@ -5,10 +5,12 @@ const RUN_SPEED = 15;
 const GRAVITY = 42;
 const JUMP_V = 13;
 const CHASE_SAFE = 11;
-/** Kamera aiz spēlētāja (mazāks Z nekā spēlētājs, jo skrien uz +Z) */
-const CAM_DIST_BACK = 9.4;
+/** Kamera — nedaudz no sāna un muguras, lai redzētu dzenošo bomzi */
+const CAM_DIST_BACK = 8.2;
+const CAM_SIDE_X = 2.85;
 const HURDLE_GAP_MIN = 6.6;
 const HURDLE_GAP_MAX = 8.1;
+const LASER_CHANCE = 0.38;
 const CATCH_DIST = 2.2;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
@@ -98,28 +100,45 @@ function makeRobloxPlayerMesh() {
 function makeBomziMesh() {
   const g = new THREE.Group();
   const coat = new THREE.Mesh(
-    new THREE.BoxGeometry(0.75, 1.15, 0.55),
+    new THREE.BoxGeometry(0.82, 1.22, 0.58),
     new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.85 }),
   );
   coat.castShadow = true;
-  coat.position.y = 0.72;
+  coat.position.y = 0.76;
   g.add(coat);
   const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.28, 12, 10),
+    new THREE.SphereGeometry(0.3, 14, 12),
     new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.65 }),
   );
   head.castShadow = true;
-  head.position.set(0, 1.38, 0.05);
+  head.position.set(0, 1.44, 0.06);
   g.add(head);
-  const stick = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.07, 2.6, 8),
-    new THREE.MeshStandardMaterial({ color: 0x6b5344, roughness: 0.9 }),
+  const hat = new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.12, 0.38),
+    new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.9 }),
   );
-  stick.rotation.z = Math.PI / 5;
-  stick.rotation.x = Math.PI / 12;
-  stick.position.set(0.55, 0.95, -0.35);
+  hat.position.set(0, 1.62, 0);
+  hat.castShadow = true;
+  g.add(hat);
+
+  const stickMat = new THREE.MeshStandardMaterial({
+    color: 0x4a3528,
+    roughness: 0.88,
+    emissive: 0x1a1008,
+    emissiveIntensity: 0.15,
+  });
+  const stick = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.075, 3.35, 10),
+    stickMat,
+  );
+  stick.rotation.z = Math.PI / 4.2;
+  stick.rotation.x = Math.PI / 11;
+  stick.position.set(0.62, 1.05, -0.42);
   stick.castShadow = true;
   g.add(stick);
+
+  g.scale.setScalar(1.22);
+  g.userData = { stick };
   return g;
 }
 
@@ -144,8 +163,8 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     scene.background = new THREE.Color(0xb8c4d8);
     scene.fog = new THREE.Fog(0xb8c4d8, 35, 145);
 
-    const camera = new THREE.PerspectiveCamera(58, 1, 0.15, 220);
-    camera.position.set(0, 4.85, 4 - CAM_DIST_BACK);
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.15, 220);
+    camera.position.set(CAM_SIDE_X, 5.05, 4 - CAM_DIST_BACK);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -237,6 +256,62 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       });
     }
 
+    function spawnLaserGate(aheadZ) {
+      const root = new THREE.Group();
+      const postGeo = new THREE.BoxGeometry(0.24, 1.42, 0.24);
+      const postMat = new THREE.MeshStandardMaterial({
+        color: 0x4a5060,
+        roughness: 0.62,
+      });
+      const poleL = new THREE.Mesh(postGeo, postMat);
+      poleL.position.set(-1.42, 0.71, 0);
+      poleL.castShadow = true;
+      const poleR = poleL.clone();
+      poleR.position.x = 1.42;
+      root.add(poleL, poleR);
+
+      const beamGeo = new THREE.BoxGeometry(3.15, 0.14, 0.16);
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: 0xff1020,
+        transparent: true,
+        opacity: 0.9,
+      });
+      const beam = new THREE.Mesh(beamGeo, beamMat);
+      beam.position.set(0, 1.14, 0);
+      root.add(beam);
+
+      const glowGeo = new THREE.BoxGeometry(3.35, 0.32, 0.26);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0xff5522,
+        transparent: true,
+        opacity: 0.3,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      glow.position.set(0, 1.14, 0);
+      glow.renderOrder = 2;
+      root.add(glow);
+
+      root.position.set(0, 0, aheadZ);
+      scene.add(root);
+
+      obstacles.push({
+        mesh: root,
+        z: aheadZ,
+        x: 0,
+        typ: 'laser',
+        beamMat,
+        glowMat,
+        pulsePhase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    function spawnRow(aheadZ) {
+      if (Math.random() < LASER_CHANCE) spawnLaserGate(aheadZ);
+      else spawnObstacle(aheadZ);
+    }
+
     const px = 0;
     let pz = 4;
     let py = 0;
@@ -250,7 +325,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
     let nextZ = pz + 20;
     for (let i = 0; i < 28; i++) {
-      spawnObstacle(nextZ);
+      spawnRow(nextZ);
       nextZ +=
         HURDLE_GAP_MIN + Math.random() * (HURDLE_GAP_MAX - HURDLE_GAP_MIN);
     }
@@ -328,12 +403,22 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       );
       bomzi.position.x = THREE.MathUtils.lerp(bomzi.position.x, 0, Math.min(1, 10 * dt));
       bomzi.position.y = 0;
-      bomzi.lookAt(px, py + 0.9, pz + 2);
+      bomzi.lookAt(px, py + 0.95, pz + 4);
 
-      camera.position.x += (px - camera.position.x) * Math.min(1, 10 * dt);
+      const bu = bomzi.userData;
+      if (bu?.stick) {
+        bu.swingT = (bu.swingT || 0) + dt * 11;
+        bu.stick.rotation.x =
+          Math.PI / 11 + Math.sin(bu.swingT) * 0.09;
+        bu.stick.rotation.z =
+          Math.PI / 4.2 + Math.sin(bu.swingT * 0.7) * 0.06;
+      }
+
+      camera.position.x +=
+        (px + CAM_SIDE_X - camera.position.x) * Math.min(1, 8 * dt);
       camera.position.z = pz - CAM_DIST_BACK;
-      camera.position.y = 4.75 + py * 0.38;
-      camera.lookAt(px, py + 1.25, pz + 38);
+      camera.position.y = 5.05 + py * 0.36;
+      camera.lookAt(px - 0.5, py + 1.15, pz + 30);
 
       player.updateMatrixWorld(true);
       const playerBox = new THREE.Box3().setFromObject(player);
@@ -345,11 +430,27 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
           obstacles.splice(i, 1);
           continue;
         }
+        if (o.typ === 'laser' && o.beamMat) {
+          o.pulsePhase += dt * 12;
+          o.beamMat.opacity = 0.68 + 0.26 * Math.sin(o.pulsePhase);
+          if (o.glowMat)
+            o.glowMat.opacity = 0.18 + 0.14 * Math.sin(o.pulsePhase * 1.4);
+        }
         o.mesh.updateMatrixWorld(true);
-        const box = new THREE.Box3().setFromObject(o.mesh);
+        let box = new THREE.Box3().setFromObject(o.mesh);
+        if (o.typ === 'laser') {
+          const beam = o.mesh.children.find(
+            (ch) => ch.material === o.beamMat,
+          );
+          if (beam) {
+            beam.updateMatrixWorld(true);
+            box = new THREE.Box3().setFromObject(beam);
+          }
+        }
         if (playerBox.intersectsBox(box)) {
           let ok = false;
           if (o.typ === 'low' && py > 1.02) ok = true;
+          if (o.typ === 'laser' && py > 1.38) ok = true;
           if (!ok) stumble = STUMBLE_TIME;
         }
       }
@@ -362,7 +463,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
           obstacles.length > 0 ? obstacles[obstacles.length - 1].z : pz;
         const gap =
           HURDLE_GAP_MIN + Math.random() * (HURDLE_GAP_MAX - HURDLE_GAP_MIN);
-        spawnObstacle(lastZ + gap);
+        spawnRow(lastZ + gap);
       }
 
       const distCatch = pz - bomzi.position.z;

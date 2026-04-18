@@ -15,8 +15,8 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Tu redzi savu klucīšu avatāru no muguras — secīgi zemie šķēršļi vienā līnijā,
-          lec no viena uz nākamo; bomzis ar koku dzenas pakaļ
+          Tu redzi savu klucīšu avatāru un no sāna palīdzīgi arī bomzi ar garu nūju,
+          kas dzenas pakaļ — šķēršļi un pulsējoši sarkanie lāzeri priekšā
         </p>
       </div>
 
@@ -47,8 +47,8 @@ export default function BomzisChasePage() {
       <section className="bomzischase-help">
         <p>
           <kbd>Space</kbd> vai <kbd>↑</kbd> — lēkt · skārienekrānā pieskaries laukumam.
-          Šķēršļi ir vienā rindā priekšā — lai tiktu pāri, jālēkā no viena uz nākamo.
-          Pret triecienu bomzis pietuvojas — neļauj viņam klāt!
+          Zemie klucīši un augstāki lāzeru starojumi — lēciens jāsaņem augstāk pie
+          lāzeriem. Bomzis ar nūju dzenas pa pēdām — trieciens viņu pietuvina.
         </p>
       </section>
     </div>
