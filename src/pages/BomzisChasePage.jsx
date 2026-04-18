@@ -64,8 +64,9 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Platāks skats — redzi arī bomzi ar nūju aiz muguras; vari apstāties (
-          <kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»). Šķēršļi un lāzeri priekšā
+          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>. Platāks skats rāda viņu
+          ar nūju aiz muguras; vari apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
+          Šķēršļi un lāzeri priekšā
         </p>
       </div>
 
@@ -110,7 +111,7 @@ export default function BomzisChasePage() {
             Punkti: <strong>{hud.score}</strong>
           </span>
           <span>
-            Attālums līdz bomzim: ~<strong>{hud.gap}</strong> m
+            Līdz bomzim ~<strong>{hud.gap}</strong> m — viņš cenšas tevi nosist
             {hud.braking && (
               <span className="bomzischase-braking-tag"> · stāvi</span>
             )}
@@ -123,7 +124,7 @@ export default function BomzisChasePage() {
                 </>
               ) : (
                 <>
-                  Bomzis iesita vai noķēra — jāsāk no jauna. Punkti:{' '}
+                  Bomzis tevi nosita — esi miris, jāsāk no jauna. Punkti:{' '}
                   {gameOver.score}.{' '}
                 </>
               )}
@@ -146,16 +147,16 @@ export default function BomzisChasePage() {
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens. Zemie
               klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span>{' '}
-              vai <span className="bomzischase-help-strong">bomzis noķer</span> — no
-              jauna. Bomzis redzams kadrā.
+              vai <span className="bomzischase-help-strong">bomzis tevi nosist</span> —
+              no jauna. Bomža uzdevums ir nogalināt tevi — viņš redzams kadrā.
             </>
           ) : (
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
-              apstāties (bomzis tuvojas). Zemie klucīši — trieciens;{' '}
+              apstāties (bomzis tuvojas, lai tevi nosistu). Zemie klucīši — trieciens;{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
-              <span className="bomzischase-help-strong">bomzis ķer klāt</span> —
-              spēle no jauna. Platāks skats rāda bomzi.
+              <span className="bomzischase-help-strong">bomzis tevi nosist</span> —
+              spēle no jauna. Bomža uzdevums ir nogalināt tevi.
             </>
           )}
         </p>
