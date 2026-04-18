@@ -378,6 +378,67 @@
   text-align: center;
 }
 
+.hack-shop-lead {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+}
+
+.hack-shop-subtitle {
+  margin: 18px 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #555;
+  text-align: center;
+}
+
+.hack-shop-lux-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hack-shop-nav-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+}
+
+.hack-shop-nav-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.hack-shop-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hack-shop-lux-meta {
+  font-size: 13px;
+  color: #666;
+}
+
+.hack-shop-price--lux {
+  color: #8b2342;
+  font-weight: 700;
+  word-break: break-all;
+  max-width: 58%;
+  text-align: right;
+}
+
+.hack-shop-card--lux {
+  border-color: #deb8c4;
+  background: linear-gradient(160deg, #fffefb 0%, #fff5f8 100%);
+}
+
 .hack-shop-grid {
   list-style: none;
   margin: 0;

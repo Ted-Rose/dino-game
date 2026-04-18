@@ -178,42 +178,129 @@ function getWorldTheme(scoreVal) {
   return WORLD_THEMES[worldTierFromScore(scoreVal)];
 }
 
-const HACK_SHOP = [
+const BASE_HACK_SHOP = [
   {
     id: 'clear',
+    effect: 'clear',
     name: 'Kaktusu bumba',
     desc: 'Notīra visus šķēršļus',
-    price: 40,
+    price: '40',
+    duration: 0,
   },
   {
     id: 'slow',
+    effect: 'slow',
     name: 'Lēnā pasaule',
     desc: 'Skrējiena ātrums −50% apm. 5 s',
-    price: 120,
+    price: '120',
     duration: 300,
   },
   {
     id: 'jump',
+    effect: 'jump',
     name: 'Super lēciens',
     desc: 'Augstāks lēciens apm. 8 s',
-    price: 90,
+    price: '90',
     duration: 480,
   },
   {
     id: 'magnet',
+    effect: 'magnet',
     name: 'Naudas magnēts',
     desc: '2× naudiņas apm. 15 s',
-    price: 200,
+    price: '200',
     duration: 900,
   },
   {
     id: 'shield',
+    effect: 'shield',
     name: 'Spoku plēve',
     desc: 'Neredzams (bez triecieniem) apm. 4 s',
-    price: 160,
+    price: '160',
     duration: 240,
   },
 ];
+
+const LUXURY_NAMES_A = [
+  'Absolūtais',
+  'Dievišķais',
+  'Nenosakāmais',
+  'Bezgalīgais',
+  'Izsmalcinātais',
+  'Hyper',
+  'Ultra',
+  'Mega',
+  'Galaktiskais',
+  'Kvantu',
+];
+
+const LUXURY_NAMES_B = [
+  'diadems',
+  'sigils',
+  'amfors',
+  'sigārs',
+  'šarms',
+  'mantija',
+  'artifacts',
+  'ģenerators',
+  'rezonators',
+  'privilēģija',
+];
+
+/** Ģenerē 9999 ekstrēmi dārgus luksusa hakus (tie paši efektu tipi rotācijā). */
+function buildLuxuryHacks() {
+  const effects = ['clear', 'slow', 'jump', 'magnet', 'shield'];
+  const list = [];
+  for (let i = 0; i < 9999; i++) {
+    const tier = i + 1;
+    const effect = effects[i % 5];
+    const na = LUXURY_NAMES_A[i % LUXURY_NAMES_A.length];
+    const nb = LUXURY_NAMES_B[(i * 13) % LUXURY_NAMES_B.length];
+    const price =
+      42n * 10n ** 22n + BigInt(tier) * (777n * 10n ** 19n) + BigInt(i % 997) * 10n ** 17n;
+    const duration =
+      effect === 'clear'
+        ? 0
+        : 240 + ((i * 31) % 900) + (tier % 17) * 12;
+    list.push({
+      id: `lux-${i}`,
+      effect,
+      name: `${na} ${nb} · līmenis ${tier}`,
+      desc: `Luksusa priekšrocība Nr. ${tier} — ${effect === 'clear' ? 'tīra līnija' : `modulis ~${duration} kadru`}`,
+      price: price.toString(),
+      duration,
+    });
+  }
+  return list;
+}
+
+const LUXURY_HACKS = buildLuxuryHacks();
+const HACK_SHOP = [...BASE_HACK_SHOP, ...LUXURY_HACKS];
+
+function applyHackEffect(st, item) {
+  const kind = item.effect;
+  if (!kind) return;
+  const dur = item.duration ?? 0;
+  switch (kind) {
+    case 'clear':
+      st.obstacles = [];
+      break;
+    case 'slow':
+      st.hackSlowTimer = Math.max(st.hackSlowTimer, dur);
+      break;
+    case 'jump':
+      st.hackJumpTimer = Math.max(st.hackJumpTimer, dur);
+      break;
+    case 'magnet':
+      st.hackMoneyTimer = Math.max(st.hackMoneyTimer, dur);
+      break;
+    case 'shield':
+      st.hackShieldTimer = Math.max(st.hackShieldTimer, dur);
+      break;
+    default:
+      break;
+  }
+}
 
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
@@ -244,6 +331,9 @@ export default function DinoGame() {
       return 0n;
     }
   });
+  const [luxPage, setLuxPage] = useState(0);
+  const LUX_PAGE_SIZE = 12;
+  const luxPageCount = Math.ceil(LUXURY_HACKS.length / LUX_PAGE_SIZE);
 
   useEffect(() => {
     settingsRef.current = { birdLevel, cactusLevel };
@@ -278,25 +368,7 @@ export default function DinoGame() {
     setWallet(newWallet);
     localStorage.setItem('dino-wallet', newWallet.toString());
 
-    switch (item.id) {
-      case 'clear':
-        st.obstacles = [];
-        break;
-      case 'slow':
-        st.hackSlowTimer = Math.max(st.hackSlowTimer, item.duration ?? 0);
-        break;
-      case 'jump':
-        st.hackJumpTimer = Math.max(st.hackJumpTimer, item.duration ?? 0);
-        break;
-      case 'magnet':
-        st.hackMoneyTimer = Math.max(st.hackMoneyTimer, item.duration ?? 0);
-        break;
-      case 'shield':
-        st.hackShieldTimer = Math.max(st.hackShieldTimer, item.duration ?? 0);
-        break;
-      default:
-        break;
-    }
+    applyHackEffect(st, item);
   };
 
   useEffect(() => {
@@ -937,12 +1009,69 @@ export default function DinoGame() {
       </div>
       <section className="hack-shop" aria-label="Veikals">
         <h3 className="hack-shop-title">Haču veikals — pērc par maciņa naudiņām</h3>
+        <p className="hack-shop-lead">
+          Pamata piedāvājums un{' '}
+          <strong>{LUXURY_HACKS.length}</strong> luksusa haki ar astronomiskām cenām.
+        </p>
+        <h4 className="hack-shop-subtitle">Pamats</h4>
         <ul className="hack-shop-grid">
-          {HACK_SHOP.map((item) => (
+          {BASE_HACK_SHOP.map((item) => (
             <li key={item.id} className="hack-shop-card">
               <div className="hack-shop-card-head">
                 <strong>{item.name}</strong>
                 <span className="hack-shop-price">{item.price} 💰</span>
+              </div>
+              <p className="hack-shop-desc">{item.desc}</p>
+              <button
+                type="button"
+                className="hack-shop-btn"
+                disabled={wallet + BigInt(score || '0') < BigInt(item.price)}
+                onClick={() => buyHack(item.id)}
+              >
+                Pirkt
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <h4 className="hack-shop-subtitle">
+          Luksusa katalogs ({LUXURY_HACKS.length}) — ļoti dārgi
+        </h4>
+        <div className="hack-shop-lux-nav">
+          <button
+            type="button"
+            className="hack-shop-nav-btn"
+            disabled={luxPage <= 0}
+            onClick={() => setLuxPage((p) => Math.max(0, p - 1))}
+          >
+            ← Iepriekšējā
+          </button>
+          <span className="hack-shop-lux-meta">
+            Lapa <strong>{luxPage + 1}</strong> / {luxPageCount} · rādīti{' '}
+            {LUX_PAGE_SIZE} no {LUXURY_HACKS.length}
+          </span>
+          <button
+            type="button"
+            className="hack-shop-nav-btn"
+            disabled={luxPage >= luxPageCount - 1}
+            onClick={() =>
+              setLuxPage((p) => Math.min(luxPageCount - 1, p + 1))
+            }
+          >
+            Nākamā →
+          </button>
+        </div>
+        <ul className="hack-shop-grid hack-shop-grid--lux">
+          {LUXURY_HACKS.slice(
+            luxPage * LUX_PAGE_SIZE,
+            luxPage * LUX_PAGE_SIZE + LUX_PAGE_SIZE,
+          ).map((item) => (
+            <li key={item.id} className="hack-shop-card hack-shop-card--lux">
+              <div className="hack-shop-card-head">
+                <strong>{item.name}</strong>
+                <span className="hack-shop-price hack-shop-price--lux">
+                  {item.price} 💰
+                </span>
               </div>
               <p className="hack-shop-desc">{item.desc}</p>
               <button
