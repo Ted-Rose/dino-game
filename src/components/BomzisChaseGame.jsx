@@ -9,8 +9,8 @@ const CHASE_SAFE = 11;
 const CAM_DIST_BACK = 9.6;
 const CAM_SIDE_X = 4.1;
 const LOOK_BOMZI_MIX = 0.42;
-const HURDLE_GAP_MIN = 6.6;
-const HURDLE_GAP_MAX = 8.1;
+const HURDLE_GAP_MIN = 11.8;
+const HURDLE_GAP_MAX = 14.5;
 const LASER_CHANCE = 0.38;
 /** Drošības attālums, ja lodziņu sadursme izlaiž kadru */
 const CATCH_DIST = 2.45;
@@ -328,7 +328,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
     bomzi.position.set(0, 0, pz - CHASE_SAFE);
 
-    let nextZ = pz + 20;
+    let nextZ = pz + 26;
     for (let i = 0; i < 28; i++) {
       spawnRow(nextZ);
       nextZ +=
@@ -528,7 +528,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
       while (
         obstacles.length === 0 ||
-        obstacles[obstacles.length - 1].z < pz + 60
+        obstacles[obstacles.length - 1].z < pz + 95
       ) {
         const lastZ =
           obstacles.length > 0 ? obstacles[obstacles.length - 1].z : pz;
