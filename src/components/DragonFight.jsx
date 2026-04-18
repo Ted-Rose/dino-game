@@ -5,22 +5,25 @@ import './DragonFight.css';
 const COLS = 18;
 const ROWS = 10;
 const CELL = 38;
-const GROUND = 8;
-const JUMP_Y = 3;
+
+/** Iekšējā spēles zona (bez ārējām sienām) */
+const INNER_MIN_X = 1;
+const INNER_MAX_X = COLS - 2;
+const INNER_MIN_Y = 1;
+const INNER_MAX_Y = ROWS - 2;
+
 const P_MAX_HP = 10;
 const D_MAX_HP = 5;
 
 const MINE_START = [
-  { x: 4, y: GROUND },
-  { x: 8, y: GROUND },
-  { x: 12, y: GROUND },
-  { x: 15, y: GROUND },
+  { x: 5, y: 5 }, { x: 9, y: 3 }, { x: 12, y: 6 }, { x: 7, y: 8 },
+  { x: 14, y: 4 }, { x: 4, y: 3 },
 ];
 
-const MOVE_CD  = 180;
-const DRAG_MS  = 420;
-const ATK_MS   = 900;
-const JUMP_MS  = 1500;
+const MOVE_CD    = 180;
+const DRAG_MS    = 360; /* pūķis ~2× lēnāk nekā spēlētāja solis */
+const ATK_MS     = 900;
+const JUMP_HANG_MS = 100; /* gaisā pie virsotnes */
 
 function ck(x, y) { return `${x},${y}`; }
 
@@ -60,17 +63,21 @@ function DragonSvg() {
 
 function MineSvg() {
   return (
-    <svg viewBox="0 0 36 36" width={CELL - 8} height={CELL - 8} aria-label="Mīna">
-      <line x1="18" y1="9"  x2="18" y2="3"  stroke="#546e7a" strokeWidth="3" strokeLinecap="round" />
-      <line x1="10" y1="13" x2="4"  y2="8"  stroke="#546e7a" strokeWidth="3" strokeLinecap="round" />
-      <line x1="26" y1="13" x2="32" y2="8"  stroke="#546e7a" strokeWidth="3" strokeLinecap="round" />
-      <line x1="7"  y1="22" x2="1"  y2="22" stroke="#546e7a" strokeWidth="3" strokeLinecap="round" />
-      <line x1="29" y1="22" x2="35" y2="22" stroke="#546e7a" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="18" cy="23" r="12" fill="#37474f" />
-      <circle cx="18" cy="23" r="9.5" fill="#546e7a" />
-      <circle cx="14" cy="19" r="2.8" fill="#fff" opacity="0.18" />
-      <path d="M18,10 Q22,5 20,2" fill="none" stroke="#ffa726" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="20" cy="2" r="1.5" fill="#ffa726" />
+    <svg viewBox="0 0 36 36" width={CELL - 6} height={CELL - 6} aria-label="Mīna" className="df-mine-svg">
+      {/* spikes */}
+      <polygon points="18,4 15,11 21,11" fill="#b71c1c" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="32,18 25,15 25,21" fill="#b71c1c" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="18,32 15,25 21,25" fill="#b71c1c" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="4,18 11,15 11,21" fill="#b71c1c" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="27,9 21,13 24,18" fill="#d32f2f" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="27,27 24,18 21,23" fill="#d32f2f" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="9,27 15,23 12,18" fill="#d32f2f" stroke="#7f0000" strokeWidth="0.5" />
+      <polygon points="9,9 12,18 15,13" fill="#d32f2f" stroke="#7f0000" strokeWidth="0.5" />
+      {/* body */}
+      <circle cx="18" cy="18" r="11" fill="#c62828" stroke="#7f0000" strokeWidth="2" />
+      <circle cx="18" cy="18" r="7.5" fill="#e53935" />
+      <ellipse cx="14" cy="15" rx="2.5" ry="2" fill="#ffcdd2" opacity="0.35" />
+      <circle cx="18" cy="18" r="3.5" fill="#b71c1c" opacity="0.45" />
     </svg>
   );
 }
@@ -84,12 +91,19 @@ function PlayerCell({ characterId, world, jumping, flash }) {
   );
 }
 
-export default function DragonFight({ characterId, world, onWin, onLose }) {
+function clampInner(x, y) {
+  return {
+    x: Math.max(INNER_MIN_X, Math.min(INNER_MAX_X, x)),
+    y: Math.max(INNER_MIN_Y, Math.min(INNER_MAX_Y, y)),
+  };
+}
+
+export default function DragonFight({ characterId, world, onWin }) {
   /* ---- state ---- */
-  const [px, setPx]               = useState(1);
-  const [py, setPy]               = useState(GROUND);
-  const [drX, setDrX]             = useState(COLS - 2);
-  const [drY, setDrY]             = useState(GROUND);
+  const [px, setPx]               = useState(INNER_MIN_X);
+  const [py, setPy]               = useState(INNER_MAX_Y);
+  const [drX, setDrX]             = useState(INNER_MAX_X);
+  const [drY, setDrY]             = useState(INNER_MAX_Y);
   const [playerHp, setPlayerHp]   = useState(P_MAX_HP);
   const [dragonHp, setDragonHp]   = useState(D_MAX_HP);
   const [jumping, setJumping]      = useState(false);
@@ -101,7 +115,7 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
 
   /* ---- mutable ref for game-loop closures ---- */
   const G = useRef({
-    px: 1, py: GROUND, drX: COLS - 2, drY: GROUND,
+    px: INNER_MIN_X, py: INNER_MAX_Y, drX: INNER_MAX_X, drY: INNER_MAX_Y,
     playerHp: P_MAX_HP, dragonHp: D_MAX_HP,
     jumping: false, mines: new Set(MINE_START.map(m => ck(m.x, m.y))),
     result: null,
@@ -145,77 +159,104 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
     }
   }, [addFlash]);
 
-  const checkMine = useCallback((x, y, moveDir) => {
+  const checkMine = useCallback((x, y, pushDx, pushDy) => {
     const k = ck(x, y);
     if (!G.current.mines.has(k)) return;
     const next = new Set(G.current.mines);
     next.delete(k);
     G.current.mines = next;
     setMines(new Set(next));
-    const push = moveDir !== 0 ? -moveDir * 3 : (x > COLS / 2 ? -3 : 3);
-    const nx = Math.max(1, Math.min(COLS - 2, x + push));
-    G.current.px = nx;
-    setPx(nx);
+    let nx = x;
+    let ny = y;
+    if (pushDx !== 0) nx = x - Math.sign(pushDx) * 3;
+    else if (pushDy !== 0) ny = y - Math.sign(pushDy) * 3;
+    else nx = x + (x > COLS / 2 ? -3 : 3);
+
+    let fin = clampInner(nx, ny);
+    if (fin.x === G.current.drX && fin.y === G.current.drY) {
+      fin = clampInner(fin.x + (fin.x <= INNER_MIN_X + 1 ? 2 : -2), fin.y);
+    }
+    G.current.px = fin.x;
+    G.current.py = fin.y;
+    setPx(fin.x);
+    setPy(fin.y);
     hurtPlayer(1);
   }, [hurtPlayer]);
 
   const doJump = useCallback(() => {
-    if (G.current.jumping || G.current.result || G.current.py !== GROUND) return;
+    if (G.current.jumping || G.current.result) return;
+    const baseY = G.current.py;
+    const apexY = Math.max(INNER_MIN_Y, baseY - 2);
     G.current.jumping = true;
-    G.current.py = JUMP_Y;
+    G.current.py = apexY;
     setJumping(true);
-    setPy(JUMP_Y);
+    setPy(apexY);
     jumpTm.current = setTimeout(() => {
       if (G.current.result) return;
       G.current.jumping = false;
-      G.current.py = GROUND;
+      G.current.py = baseY;
       setJumping(false);
-      setPy(GROUND);
-      // Land on dragon?
-      if (G.current.px === G.current.drX) {
+      setPy(baseY);
+      /* “Uzlekt virsū”: nolaižoties šūnā tieši virs pūķa (viena rinda augstāk) */
+      if (
+        G.current.px === G.current.drX &&
+        baseY === G.current.drY - 1
+      ) {
         hurtDragon(1);
       }
-      // Land on mine?
-      checkMine(G.current.px, GROUND, 0);
-    }, JUMP_MS);
+      checkMine(G.current.px, baseY, 0, 0);
+    }, JUMP_HANG_MS);
   }, [hurtDragon, checkMine]);
 
-  const movePlayer = useCallback((dir) => {
-    if (G.current.result || moveCd.current) return;
+  const movePlayer = useCallback((dx, dy) => {
+    if (G.current.result || moveCd.current || G.current.jumping) return;
+    if (dx === 0 && dy === 0) return;
     moveCd.current = true;
     setTimeout(() => { moveCd.current = false; }, MOVE_CD);
-    const nx = G.current.px + dir;
-    if (nx < 1 || nx > COLS - 2) return;
+    const nx = G.current.px + dx;
+    const ny = G.current.py + dy;
+    if (nx < INNER_MIN_X || nx > INNER_MAX_X || ny < INNER_MIN_Y || ny > INNER_MAX_Y) return;
+    if (nx === G.current.drX && ny === G.current.drY) return;
     G.current.px = nx;
+    G.current.py = ny;
     setPx(nx);
-    if (G.current.py === GROUND) {
-      checkMine(nx, GROUND, dir);
-    }
+    setPy(ny);
+    checkMine(nx, ny, dx, dy);
   }, [checkMine]);
 
-  /* ---- Dragon AI: move ---- */
+  /* ---- Dragon AI: move (pilna arena) ---- */
   useEffect(() => {
     dragTimer.current = setInterval(() => {
       if (G.current.result) return;
-      const { px, drX } = G.current;
-      if (px === drX) return;
-      const dir = px > drX ? 1 : -1;
-      const nx = drX + dir;
-      if (nx < 1 || nx > COLS - 2) return;
-      if (nx === G.current.px && G.current.py === GROUND) return;
-      G.current.drX = nx;
-      setDrX(nx);
+      const { px: pxv, py: pyv, drX: dxv, drY: dyv } = G.current;
+      if (pxv === dxv && pyv === dyv) return;
+      const adx = pxv - dxv;
+      const ady = pyv - dyv;
+      const steps = [];
+      if (adx !== 0) steps.push({ x: dxv + Math.sign(adx), y: dyv });
+      if (ady !== 0) steps.push({ x: dxv, y: dyv + Math.sign(ady) });
+      if (Math.abs(adx) < Math.abs(ady)) steps.reverse();
+
+      for (const p of steps) {
+        if (p.x < INNER_MIN_X || p.x > INNER_MAX_X || p.y < INNER_MIN_Y || p.y > INNER_MAX_Y) continue;
+        if (p.x === G.current.px && p.y === G.current.py) continue;
+        G.current.drX = p.x;
+        G.current.drY = p.y;
+        setDrX(p.x);
+        setDrY(p.y);
+        return;
+      }
     }, DRAG_MS);
     return () => clearInterval(dragTimer.current);
   }, []);
 
-  /* ---- Dragon AI: attack ---- */
+  /* ---- Dragon uzbrūk — blakus šūna (četros virzienos) ---- */
   useEffect(() => {
     atkTimer.current = setInterval(() => {
       if (G.current.result) return;
-      const { px, py, drX, drY } = G.current;
-      const adj = Math.abs(px - drX) <= 1 && py === GROUND && drY === GROUND;
-      if (!adj) return;
+      const { px: pxv, py: pyv, drX: dxv, drY: dyv } = G.current;
+      const manhattan = Math.abs(pxv - dxv) + Math.abs(pyv - dyv);
+      if (manhattan !== 1) return;
       hurtPlayer(1);
     }, ATK_MS);
     return () => clearInterval(atkTimer.current);
@@ -224,8 +265,10 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
   /* ---- Keyboard ---- */
   useEffect(() => {
     const h = (e) => {
-      if (e.code === 'ArrowLeft')  { e.preventDefault(); movePlayer(-1); }
-      if (e.code === 'ArrowRight') { e.preventDefault(); movePlayer(1); }
+      if (e.code === 'ArrowLeft')  { e.preventDefault(); movePlayer(-1, 0); }
+      if (e.code === 'ArrowRight') { e.preventDefault(); movePlayer(1, 0); }
+      if (e.code === 'ArrowUp')    { e.preventDefault(); movePlayer(0, -1); }
+      if (e.code === 'ArrowDown')  { e.preventDefault(); movePlayer(0, 1); }
       if (e.code === 'Space')      { e.preventDefault(); doJump(); }
     };
     window.addEventListener('keydown', h);
@@ -243,12 +286,12 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
   const restart = () => {
     clearTimeout(jumpTm.current);
     G.current = {
-      px: 1, py: GROUND, drX: COLS - 2, drY: GROUND,
+      px: INNER_MIN_X, py: INNER_MAX_Y, drX: INNER_MAX_X, drY: INNER_MAX_Y,
       playerHp: P_MAX_HP, dragonHp: D_MAX_HP,
       jumping: false, mines: new Set(MINE_START.map(m => ck(m.x, m.y))),
       result: null,
     };
-    setPx(1); setPy(GROUND); setDrX(COLS - 2); setDrY(GROUND);
+    setPx(INNER_MIN_X); setPy(INNER_MAX_Y); setDrX(INNER_MAX_X); setDrY(INNER_MAX_Y);
     setPlayerHp(P_MAX_HP); setDragonHp(D_MAX_HP);
     setJumping(false); setMines(new Set(MINE_START.map(m => ck(m.x, m.y))));
     setResult(null); setFlashes([]);
@@ -291,8 +334,7 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
           {Array.from({ length: ROWS }, (_, row) =>
             Array.from({ length: COLS }, (_, col) => {
               const isWall    = row === 0 || row === ROWS - 1 || col === 0 || col === COLS - 1;
-              const isGround  = !isWall && row === GROUND;
-              const isSky     = !isWall && row < GROUND;
+              const isFloor   = !isWall;
               const isPlayer  = col === px && row === py;
               const isDragon  = col === drX && row === drY;
               const isMine    = mines.has(ck(col, row));
@@ -302,8 +344,7 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
                   className={[
                     'df-cell',
                     isWall   ? 'df-cell--wall'   : '',
-                    isGround ? 'df-cell--ground' : '',
-                    isSky    ? 'df-cell--sky'    : '',
+                    isFloor  ? 'df-cell--floor'  : '',
                     isPlayer && pFlash ? 'df-cell--p-hit' : '',
                     isDragon && dFlash ? 'df-cell--d-hit' : '',
                   ].join(' ').trim()}
@@ -334,17 +375,26 @@ export default function DragonFight({ characterId, world, onWin, onLose }) {
         ))}
       </div>
 
-      {/* D-pad + jump */}
-      <div className="df-dpad">
-        <button type="button" className="df-btn" onClick={() => movePlayer(-1)}>◀</button>
-        <button type="button" className="df-btn df-btn--jump" onClick={doJump} disabled={jumping}>
-          <span className="df-jump-icon">↑</span>
-          <span className="df-jump-label">Lēkt (Space)</span>
-        </button>
-        <button type="button" className="df-btn" onClick={() => movePlayer(1)}>▶</button>
+      {/* Vadība */}
+      <div className="df-controls">
+        <div className="df-dpad-grid">
+          <div className="df-dpad-cell" />
+          <button type="button" className="df-btn df-btn--mini" onClick={() => movePlayer(0, -1)} aria-label="Augšup">▲</button>
+          <div className="df-dpad-cell" />
+          <button type="button" className="df-btn df-btn--mini" onClick={() => movePlayer(-1, 0)} aria-label="Pa kreisi">◀</button>
+          <button type="button" className="df-btn df-btn--jump" onClick={doJump} disabled={jumping}>
+            <span className="df-jump-icon">↑</span>
+            <span className="df-jump-label">Lēkt</span>
+          </button>
+          <button type="button" className="df-btn df-btn--mini" onClick={() => movePlayer(1, 0)} aria-label="Pa labi">▶</button>
+          <div className="df-dpad-cell" />
+          <button type="button" className="df-btn df-btn--mini" onClick={() => movePlayer(0, 1)} aria-label="Lejup">▼</button>
+          <div className="df-dpad-cell" />
+        </div>
+        <p className="df-space-hint">Tastatūrā: bultiņas + Space (lēkt)</p>
       </div>
       <p className="df-hint">
-        Lēc pāri pūķim — kad nolec uz viņa šūnas, tas zaudē 1 dzīvību! · Uzmanieties no mīnām 💥
+        Kusties pa visu laukumu. Lēcienā tu augsti 2 rindas un gaisā karājies 0,1 s — nolaidies tieši virs pūķa (viena šūna augstāk par viņu), lai atņemtu 1 dzīvību. Sarkanās mīnas 💥
       </p>
 
       {/* Result overlay */}
