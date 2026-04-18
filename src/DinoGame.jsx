@@ -241,7 +241,7 @@ const LUXURY_NAMES_B = [
   'sigārs',
   'šarms',
   'mantija',
-  'artifacts',
+  'relikvija',
   'ģenerators',
   'rezonators',
   'privilēģija',
