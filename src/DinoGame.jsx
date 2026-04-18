@@ -22,7 +22,7 @@ const PHYSICS = {
 /** Simulācijas laika mērogs: viss 10× lēnāk (laika solis un naudiņu ms ÷ 10). */
 const GAME_SPEED_DIV = 10;
 
-const INITIAL_LIVES = 3;
+const INITIAL_LIVES = 1;
 
 const INVINCIBLE_DURATION = 90;
 
