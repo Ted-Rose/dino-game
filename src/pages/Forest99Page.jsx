@@ -33,6 +33,9 @@ const defaultHud = {
   canShelter: false,
   nearMerchant: false,
   storyLine: '',
+  bagOpen: false,
+  hasAxe: true,
+  bagHint: '',
 };
 
 export default function Forest99Page() {
@@ -99,6 +102,57 @@ export default function Forest99Page() {
       {hud.storyLine && (
         <div className="forest99-story" role="status">
           {hud.storyLine}
+        </div>
+      )}
+
+      {hud.bagOpen && (
+        <div className="forest99-bag" role="dialog" aria-modal="true" aria-labelledby="forest99-bag-title">
+          <div className="forest99-bag__panel">
+            <h2 id="forest99-bag-title" className="forest99-bag__title">
+              Soma
+            </h2>
+            <p className="forest99-bag__axe">
+              {hud.hasAxe ? (
+                <>
+                  <span className="forest99-bag__axe-icon" aria-hidden>
+                    🪓
+                  </span>{' '}
+                  Cirvis — kokus cirp ar <kbd>E</kbd>
+                </>
+              ) : (
+                'Nav cirvja — kokus nevar nocirst.'
+              )}
+            </p>
+            <ul className="forest99-bag__list">
+              <li>
+                Malka <strong>{hud.wood}</strong>
+              </li>
+              <li>
+                Akmens <strong>{hud.stone}</strong>
+              </li>
+              <li>
+                Ogas <strong>{hud.berries}</strong>
+              </li>
+              <li>
+                Monētas <strong>{hud.coins}</strong>
+              </li>
+              {hud.spearOwned && (
+                <li>
+                  Šķēps <strong>ir</strong>
+                </li>
+              )}
+              {hud.shelterLevel > 0 && (
+                <li>
+                  Pajumte <strong>{hud.shelterLevel}</strong>. līmenis
+                </li>
+              )}
+            </ul>
+            {hud.bagHint ? <p className="forest99-bag__ground">{hud.bagHint}</p> : null}
+            <p className="forest99-bag__footer">
+              Apkārt ir lādes — tuvumā spied <kbd>E</kbd>, lai tās atvērtu.
+            </p>
+            <p className="forest99-bag__close-hint">Tab vai Sm — aizvērt somu</p>
+          </div>
         </div>
       )}
 
@@ -177,8 +231,8 @@ export default function Forest99Page() {
 
       <p className="forest99-help">
         {touchUi
-          ? 'Spieķis — kustība · velc labajā pusē — skats · Kr/E/F/Q/R/H/Sk · 1/2 pie tirgotāja'
-          : 'WASD vai bultiņas · Shift skriet · E — lasīt · Space uzbrukt · F/Q/R/H · pele · Ēnas naktī'}
+          ? 'Spieķis — kustība · velc labajā pusē — skats · Tab/Sm — soma · E — cirpt/lasīt · kokiem kritīs malka · lādes apkārt'
+          : 'WASD vai bultiņas · Shift skriet · Tab — soma · E — cirvis kokiem / lasīt zemē un lādēs · Space uzbrukt · F/Q/R/H · Ēnas naktī'}
       </p>
 
       {end === 'win' && (

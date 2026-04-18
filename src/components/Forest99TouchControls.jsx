@@ -228,6 +228,7 @@ export default function Forest99TouchControls({ touchInputRef, nearMerchant }) {
           {btn('H', 'KeyH', 'Pajumte')}
         </div>
         <div className="forest99-touch-actions__row">
+          {btn('Sm', 'Tab', 'Soma')}
           {btn('Sk', 'ShiftLeft', 'Skriet')}
           {btn('1', 'Digit1', 'Tirgotājs: ogas')}
           {btn('2', 'Digit2', 'Tirgotājs: malka')}

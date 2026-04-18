@@ -128,8 +128,14 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
     const rockGeo = new THREE.DodecahedronGeometry(0.62, 0);
     const rockMat = new THREE.MeshStandardMaterial({ color: 0x6a6e72, roughness: 1 });
     const bushMat = new THREE.MeshStandardMaterial({ color: 0x286030, roughness: 1 });
+    const logPickupGeo = new THREE.CylinderGeometry(0.2, 0.26, 0.78, 8);
+    const logPickupMat = new THREE.MeshStandardMaterial({ color: 0x5a3822, roughness: 1 });
+    const chestGeo = new THREE.BoxGeometry(0.92, 0.58, 0.62);
+    const chestMatClosed = new THREE.MeshStandardMaterial({ color: 0x6b4830, roughness: 0.92 });
+    const chestMatOpen = new THREE.MeshStandardMaterial({ color: 0x352418, roughness: 1 });
 
     const trees = [];
+    const groundLogs = [];
 
     for (let i = 0; i < 200; i++) {
       const x = (rand() - 0.5) * WORLD_HALF * 1.85;
@@ -179,6 +185,22 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       bush.receiveShadow = true;
       scene.add(bush);
       bushes.push(bush);
+    }
+
+    const chests = [];
+    for (let i = 0; i < 26; i++) {
+      const x = (rand() - 0.5) * WORLD_HALF * 1.78;
+      const z = (rand() - 0.5) * WORLD_HALF * 1.78;
+      if (x * x + z * z < 17 * 17) continue;
+      const lid = new THREE.Mesh(chestGeo, chestMatClosed);
+      lid.position.y = 0.31;
+      lid.castShadow = true;
+      lid.receiveShadow = true;
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      g.add(lid);
+      scene.add(g);
+      chests.push({ mesh: g, x, z, opened: false });
     }
 
     const merchant = new THREE.Group();
@@ -261,6 +283,9 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
 
     const onKeyDown = (e) => {
       keys[e.code] = true;
+      if (e.code === 'Tab') {
+        e.preventDefault();
+      }
       if (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
         e.preventDefault();
       }
@@ -314,6 +339,8 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
     let spearOwned = false;
     let shelterLevel = 0;
     let torchUnlocked = false;
+    let hasAxe = true;
+    let bagOpen = false;
     function effectiveFireFuel() {
       return fireFuel + shelterLevel * 6;
     }
@@ -469,6 +496,27 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
     let prevSpace = false;
     let prevDigit1 = false;
     let prevDigit2 = false;
+    let prevTab = false;
+
+    function spawnWoodDrops(tx, tz, count) {
+      const lim = WORLD_HALF - 1.2;
+      for (let i = 0; i < count; i++) {
+        const ang = rand() * Math.PI * 2;
+        const dist = 0.65 + rand() * 2.4;
+        let x = tx + Math.cos(ang) * dist;
+        let z = tz + Math.sin(ang) * dist;
+        x = Math.max(-lim, Math.min(lim, x));
+        z = Math.max(-lim, Math.min(lim, z));
+        const mesh = new THREE.Mesh(logPickupGeo, logPickupMat);
+        mesh.rotation.z = Math.PI / 2;
+        mesh.rotation.y = rand() * Math.PI * 2;
+        mesh.position.set(x, 0.38, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+        groundLogs.push({ mesh, x, z });
+      }
+    }
 
     function distMerchant() {
       return Math.hypot(player.position.x - merchant.position.x, player.position.z - merchant.position.z);
@@ -482,13 +530,33 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       let bestIdx = -1;
       let bestD = INTERACT_RANGE;
 
-      for (let i = 0; i < trees.length; i++) {
-        const g = trees[i];
-        const d = Math.hypot(g.position.x - px, g.position.z - pz);
+      for (let i = 0; i < groundLogs.length; i++) {
+        const L = groundLogs[i];
+        const d = Math.hypot(L.x - px, L.z - pz);
         if (d < bestD) {
           bestD = d;
-          bestType = 'tree';
+          bestType = 'log';
           bestIdx = i;
+        }
+      }
+      for (let i = 0; i < chests.length; i++) {
+        if (chests[i].opened) continue;
+        const d = Math.hypot(chests[i].x - px, chests[i].z - pz);
+        if (d < bestD) {
+          bestD = d;
+          bestType = 'chest';
+          bestIdx = i;
+        }
+      }
+      if (hasAxe) {
+        for (let i = 0; i < trees.length; i++) {
+          const g = trees[i];
+          const d = Math.hypot(g.position.x - px, g.position.z - pz);
+          if (d < bestD) {
+            bestD = d;
+            bestType = 'tree';
+            bestIdx = i;
+          }
         }
       }
       for (let i = 0; i < rocks.length; i++) {
@@ -508,15 +576,39 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
         }
       }
 
-      if (bestIdx < 0) return;
+      if (bestIdx < 0 || bestType === '') return;
       actionCd = ACTION_CD;
-      audio.chop();
 
+      if (bestType === 'log') {
+        const item = groundLogs.splice(bestIdx, 1)[0];
+        scene.remove(item.mesh);
+        wood += 1;
+        audio.chop();
+        return;
+      }
+      if (bestType === 'chest') {
+        const ch = chests[bestIdx];
+        ch.opened = true;
+        const lid = ch.mesh.children[0];
+        if (lid) lid.material = chestMatOpen;
+        wood += 1 + Math.floor(rand() * 5);
+        stone += Math.floor(rand() * 4);
+        berries += 1 + Math.floor(rand() * 5);
+        coins += 2 + Math.floor(rand() * 8);
+        audio.coin();
+        return;
+      }
       if (bestType === 'tree') {
         const removed = trees.splice(bestIdx, 1)[0];
+        const tx = removed.position.x;
+        const tz = removed.position.z;
         scene.remove(removed);
-        wood += 1 + Math.floor(rand() * 2);
-      } else if (bestType === 'rock') {
+        spawnWoodDrops(tx, tz, 3 + Math.floor(rand() * 4));
+        audio.chop();
+        return;
+      }
+      audio.chop();
+      if (bestType === 'rock') {
         const r = rocks.splice(bestIdx, 1)[0];
         scene.remove(r);
         stone += 1 + Math.floor(rand() * 2);
@@ -675,6 +767,9 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
         canShelter: wood >= 10 && distFire <= FEED_FIRE_RANGE,
         nearMerchant,
         storyLine: storyTimer > 0 ? storyMessage : '',
+        bagOpen,
+        hasAxe,
+        bagHint: `${groundLogs.length} malkas gab. uz zemes`,
       });
     }
 
@@ -699,6 +794,8 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       last = now;
 
       storyTimer = Math.max(0, storyTimer - dt);
+
+      if (mergeKey('Tab') && !prevTab) bagOpen = !bagOpen;
 
       const tiLook = touchInputRef?.current;
       if (tiLook?.enabled && tiLook.look) {
@@ -728,6 +825,7 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       prevSpace = mergeKey('Space');
       prevDigit1 = mergeKey('Digit1');
       prevDigit2 = mergeKey('Digit2');
+      prevTab = mergeKey('Tab');
 
       actionCd = Math.max(0, actionCd - dt);
       attackCd = Math.max(0, attackCd - dt);
@@ -939,6 +1037,11 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       logMat.dispose();
       emberGeo.dispose();
       emberMat.dispose();
+      logPickupGeo.dispose();
+      logPickupMat.dispose();
+      chestGeo.dispose();
+      chestMatClosed.dispose();
+      chestMatOpen.dispose();
     };
   }, [touchInputRef]);
 
