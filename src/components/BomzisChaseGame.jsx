@@ -457,7 +457,20 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
           let ok = false;
           if (o.typ === 'low' && py > 1.02) ok = true;
           if (o.typ === 'laser' && py > 1.38) ok = true;
-          if (!ok) stumble = STUMBLE_TIME;
+          if (!ok) {
+            if (o.typ === 'laser') {
+              if (!ended) {
+                ended = true;
+                endCb.current?.({
+                  score: Math.floor(score),
+                  laser: true,
+                });
+              }
+              renderer.render(scene, camera);
+              return;
+            }
+            stumble = STUMBLE_TIME;
+          }
         }
       }
 

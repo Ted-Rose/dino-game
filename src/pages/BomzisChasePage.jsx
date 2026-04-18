@@ -82,7 +82,15 @@ export default function BomzisChasePage() {
           </span>
           {gameOver && (
             <span className="bomzischase-gameover">
-              Bomzis noķēra! Punkti: {gameOver.score}.{' '}
+              {gameOver.laser ? (
+                <>
+                  Lāzers tevi trāpīja — jāsāk no sākuma. Punkti: {gameOver.score}.{' '}
+                </>
+              ) : (
+                <>
+                  Bomzis noķēra! Punkti: {gameOver.score}.{' '}
+                </>
+              )}
               <button
                 type="button"
                 className="bomzischase-reload"
@@ -101,15 +109,17 @@ export default function BomzisChasePage() {
             <>
               Pieskaršanās pa spēles lauku vai poga{' '}
               <span className="bomzischase-help-strong">«Lēkt»</span> apakšā —
-              leciet; zemie klucīši un augstāki lāzeri — augstāk pie lāzeriem. Bomzis
-              ar nūju dzenas pa pēdām.
+              leciet; zemie klucīši — trieciens pietuvina bomzi;{' '}
+              <span className="bomzischase-help-strong">saskare ar lāzeru</span> — uzreiz
+              no sākuma. Bomzis ar nūju dzenas pa pēdām.
             </>
           ) : (
             <>
               <kbd>Space</kbd> vai <kbd>↑</kbd> — lēkt · skārienekrānā pieskaries
-              laukumam. Zemie klucīši un augstāki lāzeru starojumi — lēciens jāsaņem
-              augstāk pie lāzeriem. Bomzis ar nūju dzenas pa pēdām — trieciens viņu
-              pietuvina.
+              laukumam. Zemie klucīši — trieciens pietuvina bomzi;{' '}
+              <span className="bomzischase-help-strong">lāzers</span>, ja pieskaras
+              starojumam zem lēciena augstuma, beidz spēli — jāsāk no sākuma. Bomzis ar
+              nūju dzenas pa pēdām.
             </>
           )}
         </p>
