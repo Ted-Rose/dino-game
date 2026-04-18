@@ -22,7 +22,15 @@ const PHYSICS = {
 /** Simulācijas laika mērogs: viss 5× ātrāk (laika solis un naudiņu ms × 5). */
 const GAME_SPEED_MULT = 5;
 
-const INITIAL_LIVES = 1;
+const INITIAL_LIVES_STRING =
+  '999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999';
+const INITIAL_LIVES = BigInt(INITIAL_LIVES_STRING);
+
+function formatLivesDisplay(livesBigInt) {
+  const s = livesBigInt.toString();
+  const L = INITIAL_LIVES_STRING.length;
+  return s.length < L ? s.padStart(L, '0') : s;
+}
 
 const INVINCIBLE_DURATION = 90;
 
@@ -555,7 +563,7 @@ export default function DinoGame() {
       if (currentMilestone > lastMilestone) {
         state.lastLifeBonusScore = currentMilestone * 100n;
         if (state.lives < INITIAL_LIVES) {
-          state.lives += 1;
+          state.lives += 1n;
           setLives(state.lives);
           state.lifeNotice = { timer: 60, y: 0 };
         }
@@ -573,9 +581,9 @@ export default function DinoGame() {
       } else {
         for (const o of state.obstacles) {
           if (checkCollision(dino, o)) {
-            state.lives -= 1;
+            state.lives -= 1n;
             setLives(state.lives);
-            if (state.lives <= 0) {
+            if (state.lives <= 0n) {
               state.over = true;
               state.running = false;
               setGameOver(true);
@@ -774,7 +782,7 @@ export default function DinoGame() {
 
     const drawLives = () => {
       const fg = getWorldTheme(state.score).hud;
-      const label = `Dzīvības: ${state.lives}`;
+      const label = `Dzīvības: ${formatLivesDisplay(state.lives)}`;
       ctx.textAlign = 'left';
       let fs = 14;
       do {
@@ -974,7 +982,7 @@ export default function DinoGame() {
           Maciņš (kopā): <strong>{wallet.toString()}</strong>
         </span>
         <span className="status-bar-lives">
-          Dzīvības: {lives}
+          Dzīvības: {formatLivesDisplay(lives)}
         </span>
         <span>Rekords: {highScore}</span>
         {gameOver && <span className="game-over-text">Spēle galā!</span>}
