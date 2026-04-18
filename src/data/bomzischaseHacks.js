@@ -14,8 +14,16 @@ export const STORAGE_HACK_KIND = 'bomzischase-hack-kind';
 export const HACK_PACK_PRICE = 98;
 export const HACK_PACK_AMOUNT = 10;
 
-/** Kārtība UI un īsinājumi tastatūrā (1–4) */
-export const HACK_KIND_ORDER = ['shield', 'pulse', 'bounce', 'star'];
+/** Kārtība UI un īsinājumi tastatūrā (1–7) */
+export const HACK_KIND_ORDER = [
+  'shield',
+  'pulse',
+  'bounce',
+  'star',
+  'bolt',
+  'brick',
+  'surge',
+];
 
 /**
  * @typedef {{ id: string, label: string, hint: string, invulnSec: number, bomziKick: number, vyBoost: number }} HackDef
@@ -53,6 +61,30 @@ export const HACK_DEFS = {
     hint: 'Ilga neaizskaramība, vājāks atgrūdiens.',
     invulnSec: 4.85,
     bomziKick: 9,
+    vyBoost: 0,
+  },
+  bolt: {
+    id: 'bolt',
+    label: 'Zibens',
+    hint: 'Visstiprākais «augšup» grūdiens — ļoti īsa aizsardzība.',
+    invulnSec: 1.05,
+    bomziKick: 11,
+    vyBoost: 14,
+  },
+  brick: {
+    id: 'brick',
+    label: 'Mūris',
+    hint: 'Ļoti gara neaizskaramība; bomzi tikai nedaudz atkāpjas.',
+    invulnSec: 6.5,
+    bomziKick: 4,
+    vyBoost: 0,
+  },
+  surge: {
+    id: 'surge',
+    label: 'Krāšņums',
+    hint: 'Vislielākais trieciens bombim; vidēji īsa aizsardzība.',
+    invulnSec: 2.05,
+    bomziKick: 24,
     vyBoost: 0,
   },
 };

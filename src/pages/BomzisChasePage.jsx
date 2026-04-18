@@ -143,9 +143,10 @@ export default function BomzisChasePage() {
       ) {
         return;
       }
-      const digitMap = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 };
-      const idx = digitMap[e.code];
-      if (idx === undefined) return;
+      const m = /^Digit(\d)$/.exec(e.code);
+      if (!m) return;
+      const idx = Number(m[1]) - 1;
+      if (idx < 0 || idx >= HACK_KIND_ORDER.length) return;
       const id = HACK_KIND_ORDER[idx];
       if (id) pickHackKind(id);
     };
@@ -357,7 +358,7 @@ export default function BomzisChasePage() {
         <div className="bomzischase-hack-kinds">
           <p className="bomzischase-hack-kinds__hint">
             Haku veidi (viens krājums visiem): izvēlies pirms <kbd>H</kbd> vai pogas ·{' '}
-            <kbd>1</kbd>–<kbd>4</kbd>.
+            <kbd>1</kbd>–<kbd>7</kbd>.
           </p>
           <div className="bomzischase-hack-kinds__row">
             {HACK_KIND_ORDER.map((id, i) => (
@@ -619,7 +620,7 @@ export default function BomzisChasePage() {
             <>
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens,
-              «<span className="bomzischase-help-strong">Haks</span>» — četri haka veidi bodē, jāizvēlas
+              «<span className="bomzischase-help-strong">Haks</span>» — septiņi haka veidi bodē, jāizvēlas
               pirms lietošanas; aizsardzība vai pēc zaudējuma atdzīvināšana. Kreisi/labi — sāņus
               slīdēt; tumšajā bedrē
               jālec pāri uz otru malu. Arī augstas sienas, platāki baļķi, stabu sprauga;
@@ -632,7 +633,7 @@ export default function BomzisChasePage() {
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
               apstāties · <kbd>A</kbd>/<kbd>D</kbd> vai <kbd>←</kbd>/<kbd>→</kbd> — sāņus
-              slīdēt · <kbd>1</kbd>–<kbd>4</kbd> haka veids · <kbd>H</kbd> — haks (pirms tam
+              slīdēt · <kbd>1</kbd>–<kbd>7</kbd> haka veids · <kbd>H</kbd> — haks (pirms tam
               izvēlies veidu bodē) vai pēc zaudējuma atdzīvoties. Tumšā bedre: sāk no
               vienas malas lec pāri vidum uz otru malu. Citi šķēršļi — zemie klucīši un platie
               baļķi, augstas sienas (augstāks lēciens), stabu sprauga,{' '}
