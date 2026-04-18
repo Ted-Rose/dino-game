@@ -19,7 +19,7 @@ const PHYSICS = {
   speedIncrease: 0.0015,
 };
 
-const INITIAL_LIVES = 3;
+const INITIAL_LIVES = 100000;
 const INVINCIBLE_DURATION = 90;
 
 function randomRange(min, max) {
@@ -425,26 +425,13 @@ export default function DinoGame() {
       });
     };
 
-    const drawHeart = (x, y, filled) => {
-      ctx.fillStyle = filled
-        ? state.night
-          ? '#ff6b6b'
-          : '#e74c3c'
-        : state.night
-          ? '#555'
-          : '#ccc';
-      ctx.fillRect(x + 2, y, 4, 2);
-      ctx.fillRect(x + 8, y, 4, 2);
-      ctx.fillRect(x, y + 2, 14, 4);
-      ctx.fillRect(x + 2, y + 6, 10, 2);
-      ctx.fillRect(x + 4, y + 8, 6, 2);
-      ctx.fillRect(x + 6, y + 10, 2, 2);
-    };
-
     const drawLives = () => {
-      for (let i = 0; i < INITIAL_LIVES; i++) {
-        drawHeart(20 + i * 20, 20, i < state.lives);
-      }
+      const fg = state.night ? '#f7f7f7' : '#535353';
+      ctx.fillStyle = fg;
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'left';
+      const n = Math.max(0, Math.floor(state.lives));
+      ctx.fillText(`Dzīvības: ${n}`, 20, 30);
     };
 
     const drawLifeNotice = () => {
@@ -611,7 +598,7 @@ export default function DinoGame() {
       />
       <div className="status-bar">
         <span>Punkti: {score}</span>
-        <span>Dzīvības: {'♥'.repeat(lives)}{'♡'.repeat(Math.max(0, INITIAL_LIVES - lives))}</span>
+        <span>Dzīvības: {lives}</span>
         <span>Rekords: {highScore}</span>
         {gameOver && <span className="game-over-text">Spēle galā!</span>}
         {!started && !gameOver && <span>Spied Space, lai sāktu</span>}
