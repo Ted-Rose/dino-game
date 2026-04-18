@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { getSkin } from '../data/bomzischaseSkins';
 
 const RUN_SPEED = 15;
 const GRAVITY = 42;
@@ -28,10 +29,19 @@ export const BOMZISCHASE_JUMP_EVENT = 'bomzischase:jump';
 export const BOMZISCHASE_BRAKE_EVENT = 'bomzischase:brake';
 
 /** Roblox-style blocky avatar (R6-ish): head, torso, arms, legs — feet at y=0 */
-function makeRobloxPlayerMesh() {
-  const skin = new THREE.MeshStandardMaterial({ color: 0xf5c89a, roughness: 0.6 });
-  const shirt = new THREE.MeshStandardMaterial({ color: 0x1e6ef2, roughness: 0.5 });
-  const pants = new THREE.MeshStandardMaterial({ color: 0x243a52, roughness: 0.65 });
+function makeRobloxPlayerMesh(skinDef) {
+  const skinMat = new THREE.MeshStandardMaterial({
+    color: skinDef.skin,
+    roughness: 0.6,
+  });
+  const shirt = new THREE.MeshStandardMaterial({
+    color: skinDef.shirt,
+    roughness: 0.5,
+  });
+  const pants = new THREE.MeshStandardMaterial({
+    color: skinDef.pants,
+    roughness: 0.65,
+  });
 
   const root = new THREE.Group();
 
@@ -72,7 +82,7 @@ function makeRobloxPlayerMesh() {
   armL.position.set(-0.38, 1.12, 0);
   const armMeshL = new THREE.Mesh(
     new THREE.BoxGeometry(0.18, 0.5, 0.18),
-    skin,
+    skinMat,
   );
   armMeshL.castShadow = true;
   armMeshL.position.set(0, -0.24, 0);
@@ -82,14 +92,14 @@ function makeRobloxPlayerMesh() {
   const armR = new THREE.Group();
   armR.position.set(0.38, 1.12, 0);
   const armMeshR = armMeshL.clone();
-  armMeshR.material = skin;
+  armMeshR.material = skinMat;
   armMeshR.castShadow = true;
   armR.add(armMeshR);
   root.add(armR);
 
   const head = new THREE.Mesh(
     new THREE.BoxGeometry(0.4, 0.4, 0.38),
-    skin,
+    skinMat,
   );
   head.castShadow = true;
   head.position.set(0, 1.42, 0);
@@ -154,7 +164,11 @@ function makeBomziMesh() {
   return g;
 }
 
-export default function BomzisChaseGame({ onHud, onGameOver }) {
+export default function BomzisChaseGame({
+  onHud,
+  onGameOver,
+  skinId = 'classic',
+}) {
   const wrapRef = useRef(null);
   const hudCb = useRef(onHud);
   const endCb = useRef(onGameOver);
@@ -237,7 +251,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     stripes.position.z = 120;
     scene.add(stripes);
 
-    const player = makeRobloxPlayerMesh();
+    const player = makeRobloxPlayerMesh(getSkin(skinId));
     scene.add(player);
 
     const bomzi = makeBomziMesh();
@@ -628,7 +642,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       stripeGeo.dispose();
       stripeMat.dispose();
     };
-  }, []);
+  }, [skinId]);
 
   return <div className="bomzischase-canvas-wrap" ref={wrapRef} />;
 }

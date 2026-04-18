@@ -657,6 +657,98 @@
   font-weight: 600;
 }
 
+.bomzischase-shop {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto 18px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #cdd6e4;
+  background: #fafbfd;
+  box-sizing: border-box;
+}
+
+.bomzischase-shop__title {
+  margin: 0 0 8px;
+  font-size: clamp(18px, 2.5vw, 22px);
+  color: #3d4a5c;
+}
+
+.bomzischase-shop__hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.45;
+}
+
+.bomzischase-shop__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 12px;
+}
+
+.bomzischase-skin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #dde3ec;
+  background: #fff;
+}
+
+.bomzischase-skin-card--equipped {
+  border-color: #535353;
+  box-shadow: 0 0 0 2px rgba(83, 83, 83, 0.15);
+}
+
+.bomzischase-skin-card__preview {
+  display: flex;
+  gap: 4px;
+  height: 36px;
+  align-items: stretch;
+}
+
+.bomzischase-skin-card__swatch {
+  flex: 1;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.bomzischase-skin-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+}
+
+.bomzischase-skin-card__btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+  background: #535353;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.bomzischase-skin-card__btn:hover:not(:disabled) {
+  background: #3d3d3d;
+}
+
+.bomzischase-skin-card__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bomzischase-skin-card__btn--equip {
+  background: #5d7a62;
+  border-color: #4a634e;
+}
+
 .bomzischase-help-strong {
   font-weight: 700;
   color: #3d4a5c;
