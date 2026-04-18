@@ -19,8 +19,8 @@ const PHYSICS = {
   speedIncrease: 0.0015,
 };
 
-/** Simulācijas laika mērogs: viss 1000× lēnāk (laika soļa un naudiņu ms ÷ 1000). */
-const GAME_SPEED_DIV = 1000;
+/** Simulācijas laika mērogs: viss 100× ātrāk (laika solis un naudiņu ms × 100). */
+const GAME_SPEED_MULT = 100;
 
 const INITIAL_LIVES_STRING =
   '0000000000000000099999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999';
@@ -482,8 +482,8 @@ export default function DinoGame() {
     const update = (dt, deltaMs) => {
       if (!state.running || state.over) return;
 
-      const dtF = dt / GAME_SPEED_DIV;
-      const dm = deltaMs / GAME_SPEED_DIV;
+      const dtF = dt * GAME_SPEED_MULT;
+      const dm = deltaMs * GAME_SPEED_MULT;
 
       state.speed = Math.min(
         PHYSICS.maxSpeed,
@@ -505,12 +505,15 @@ export default function DinoGame() {
 
       const dino = state.dino;
       if (dino.jumping) {
-        dino.vy += PHYSICS.gravity * dtF;
-        dino.y += dino.vy * dtF;
-        if (dino.y >= GROUND_Y - DINO.height) {
-          dino.y = GROUND_Y - DINO.height;
-          dino.vy = 0;
-          dino.jumping = false;
+        for (let si = 0; si < GAME_SPEED_MULT; si++) {
+          dino.vy += PHYSICS.gravity;
+          dino.y += dino.vy;
+          if (dino.y >= GROUND_Y - DINO.height) {
+            dino.y = GROUND_Y - DINO.height;
+            dino.vy = 0;
+            dino.jumping = false;
+            break;
+          }
         }
       } else if (!dino.ducking) {
         dino.legTimer += dtF;
