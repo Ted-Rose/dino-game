@@ -21,7 +21,15 @@ const CAM_SIDE_X = 4.1;
 const LOOK_BOMZI_MIX = 0.42;
 const HURDLE_GAP_MIN = 11.8;
 const HURDLE_GAP_MAX = 14.5;
-const LASER_CHANCE = 0.38;
+/** Varbūtības vienai «rindai» (atlikums = parastais zems klucis) */
+const LASER_CHANCE = 0.26;
+const HIGH_WALL_CHANCE = 0.18;
+const WIDE_LOW_CHANCE = 0.15;
+const PILLAR_GAP_CHANCE = 0.12;
+/** Leciena augstums, lai pārskriet šķērsli / zem lāzera */
+const CLEAR_LOW = 1.02;
+const CLEAR_LASER = 1.38;
+const CLEAR_HIGH = 1.52;
 /** Spēles beigas, kad bomzis pietuvojies šim (z virzienā + lodes tests) */
 const CATCH_DIST = 3.05;
 /** Ķermeņu centru attālums — uzticamāks par lodziņiem */
@@ -285,7 +293,6 @@ export default function BomzisChaseGame({
 
     const obstacles = [];
 
-    /** Viens vidus ceļš — tikai zemie šķēršļi secīgi (lēcienu ķēde) */
     function spawnObstacle(aheadZ) {
       const x = 0;
       const mesh = new THREE.Mesh(
@@ -305,6 +312,78 @@ export default function BomzisChaseGame({
         x,
         typ: 'low',
         laneIndex: 1,
+      });
+    }
+
+    /** Plats «baļķis» — ilgāka sadursmes zona z virzienā */
+    function spawnWideLow(aheadZ) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(3.05, 0.68, 2.28),
+        new THREE.MeshStandardMaterial({
+          color: Math.random() < 0.5 ? 0xb89264 : 0x9e7040,
+          roughness: 0.77,
+        }),
+      );
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.position.set(0, 0.34, aheadZ);
+      scene.add(mesh);
+      obstacles.push({
+        mesh,
+        z: aheadZ,
+        x: 0,
+        typ: 'wide',
+      });
+    }
+
+    /** Augsta siena — jāpārlec (augstāk nekā zemais klucis) */
+    function spawnHighWall(aheadZ) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(3.25, 1.52, 1.05),
+        new THREE.MeshStandardMaterial({
+          color: Math.random() < 0.5 ? 0x7a6548 : 0x5c4a38,
+          roughness: 0.82,
+        }),
+      );
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.position.set(0, 0.76, aheadZ);
+      scene.add(mesh);
+      obstacles.push({
+        mesh,
+        z: aheadZ,
+        x: 0,
+        typ: 'high',
+      });
+    }
+
+    /** Divi stabi ar spraugu vidū — var izspraukt bez lēciena pa vidu */
+    function spawnPillarGap(aheadZ) {
+      const mat = new THREE.MeshStandardMaterial({
+        color: Math.random() < 0.5 ? 0x6b5344 : 0x8a6a52,
+        roughness: 0.74,
+      });
+      const h = 1.08;
+      const w = 0.92;
+      const d = 1.02;
+      const geom = new THREE.BoxGeometry(w, h, d);
+      const meshL = new THREE.Mesh(geom, mat);
+      meshL.castShadow = true;
+      meshL.receiveShadow = true;
+      meshL.position.set(-1.2, h * 0.5, 0);
+      const meshR = new THREE.Mesh(geom, mat);
+      meshR.castShadow = true;
+      meshR.receiveShadow = true;
+      meshR.position.set(1.2, h * 0.5, 0);
+      const root = new THREE.Group();
+      root.add(meshL, meshR);
+      root.position.set(0, 0, aheadZ);
+      scene.add(root);
+      obstacles.push({
+        mesh: root,
+        z: aheadZ,
+        typ: 'pillars',
+        parts: [meshL, meshR],
       });
     }
 
@@ -360,8 +439,29 @@ export default function BomzisChaseGame({
     }
 
     function spawnRow(aheadZ) {
-      if (Math.random() < LASER_CHANCE) spawnLaserGate(aheadZ);
-      else spawnObstacle(aheadZ);
+      const r = Math.random();
+      let t = 0;
+      t += LASER_CHANCE;
+      if (r < t) {
+        spawnLaserGate(aheadZ);
+        return;
+      }
+      t += HIGH_WALL_CHANCE;
+      if (r < t) {
+        spawnHighWall(aheadZ);
+        return;
+      }
+      t += WIDE_LOW_CHANCE;
+      if (r < t) {
+        spawnWideLow(aheadZ);
+        return;
+      }
+      t += PILLAR_GAP_CHANCE;
+      if (r < t) {
+        spawnPillarGap(aheadZ);
+        return;
+      }
+      spawnObstacle(aheadZ);
     }
 
     const px = 0;
@@ -592,6 +692,16 @@ export default function BomzisChaseGame({
           obstacles.splice(i, 1);
           continue;
         }
+        if (o.typ === 'pillars' && o.parts) {
+          let hitPillar = false;
+          for (const part of o.parts) {
+            part.updateMatrixWorld(true);
+            const pb = new THREE.Box3().setFromObject(part);
+            if (playerBox.intersectsBox(pb)) hitPillar = true;
+          }
+          if (hitPillar && !immune) stumble = STUMBLE_TIME;
+          continue;
+        }
         if (o.typ === 'laser' && o.beamMat) {
           o.pulsePhase += dt * 12;
           o.beamMat.opacity = 0.68 + 0.26 * Math.sin(o.pulsePhase);
@@ -611,8 +721,10 @@ export default function BomzisChaseGame({
         }
         if (playerBox.intersectsBox(box)) {
           let ok = immune;
-          if (!ok && o.typ === 'low' && py > 1.02) ok = true;
-          if (!ok && o.typ === 'laser' && py > 1.38) ok = true;
+          if (!ok && (o.typ === 'low' || o.typ === 'wide') && py > CLEAR_LOW)
+            ok = true;
+          if (!ok && o.typ === 'high' && py > CLEAR_HIGH) ok = true;
+          if (!ok && o.typ === 'laser' && py > CLEAR_LASER) ok = true;
           if (!ok) {
             if (o.typ === 'laser') {
               emitGameOver({

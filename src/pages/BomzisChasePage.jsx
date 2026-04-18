@@ -495,7 +495,8 @@ export default function BomzisChasePage() {
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens,
               «<span className="bomzischase-help-strong">Haks</span>» — īsa aizsardzība vai
-              atdzīvināšana (ja ir haki). Zemie klucīši — trieciens;{' '}
+              atdzīvināšana (ja ir haki). Ir arī augstas sienas, platāki baļķi un stabu sprauga;
+              zemie klucīši — trieciens;{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> — no jauna.
               Naudiņas krāj maciņā; bodē vari pirkt hakus vai savu avatāru.
@@ -504,8 +505,9 @@ export default function BomzisChasePage() {
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
               apstāties · <kbd>H</kbd> — haks dzīvē vai pēc zaudējuma — atdzīvoties (viens
-              haks). Zemie
-              klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span> vai{' '}
+              haks). Šķēršļi — zemie klucīši un platie baļķi, augstas sienas (augstāks lēciens),
+              stabu sprauga,{' '}
+              <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> — spēle no
               jauna. Skrējiena punkti kļūst par naudiņām bodē; vari pirkt 10 haku komplektu.
             </>
