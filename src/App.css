@@ -563,6 +563,15 @@
   gap: 10px;
 }
 
+.bomzischase-playfield {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .bomzischase-canvas-wrap {
   flex: 1;
   width: 100%;
@@ -572,6 +581,54 @@
   border: 1px solid #c5cdd8;
   box-shadow: 0 6px 24px rgba(40, 55, 75, 0.12);
   cursor: crosshair;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.page-bomzischase--touch {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain;
+}
+
+.page-bomzischase--touch .bomzischase-canvas-wrap {
+  min-height: min(58dvh, 560px);
+}
+
+.bomzischase-jump-btn {
+  position: absolute;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  min-width: min(300px, calc(100% - 32px));
+  padding: 16px 28px;
+  border-radius: 16px;
+  border: 2px solid #3d4a5c;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    0 4px 0 #2a3340,
+    0 8px 20px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(180deg, #6a8a70 0%, #4d6b52 100%);
+}
+
+.bomzischase-jump-btn:active {
+  transform: translateX(-50%) translateY(3px);
+  box-shadow:
+    0 1px 0 #2a3340,
+    0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+.bomzischase-help-strong {
+  font-weight: 700;
+  color: #3d4a5c;
 }
 
 .bomzischase-canvas-wrap canvas {

@@ -15,6 +15,8 @@ const CATCH_DIST = 2.2;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
 
+export const BOMZISCHASE_JUMP_EVENT = 'bomzischase:jump';
+
 /** Roblox-style blocky avatar (R6-ish): head, torso, arms, legs — feet at y=0 */
 function makeRobloxPlayerMesh() {
   const skin = new THREE.MeshStandardMaterial({ color: 0xf5c89a, roughness: 0.6 });
@@ -340,8 +342,12 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       wantJump = true;
       e.preventDefault();
     };
+    const onJumpEvent = () => {
+      wantJump = true;
+    };
     window.addEventListener('keydown', onKd);
-    wrap.addEventListener('pointerdown', onPointerJump);
+    wrap.addEventListener('pointerdown', onPointerJump, { passive: false });
+    window.addEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
     let raf = 0;
 
     function loop() {
@@ -493,7 +499,10 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', fit);
       window.removeEventListener('keydown', onKd);
-      wrap.removeEventListener('pointerdown', onPointerJump);
+      wrap.removeEventListener('pointerdown', onPointerJump, {
+        passive: false,
+      });
+      window.removeEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
       renderer.dispose();
       if (renderer.domElement.parentNode === wrap) {
         wrap.removeChild(renderer.domElement);
