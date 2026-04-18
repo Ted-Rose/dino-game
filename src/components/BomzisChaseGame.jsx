@@ -4,7 +4,8 @@ import * as THREE from 'three';
 const RUN_SPEED = 15;
 const GRAVITY = 42;
 const JUMP_V = 13;
-const CHASE_SAFE = 11;
+/** Mērķa attālums skrienot — jābūt pietiekami mazam, lai var «trāpīt» */
+const CHASE_SAFE = 5.4;
 /** Kamera — platāks kadrs un vērstā pret bomzi, lai abi iekrājas skatā */
 const CAM_DIST_BACK = 9.6;
 const CAM_SIDE_X = 4.1;
@@ -12,11 +13,14 @@ const LOOK_BOMZI_MIX = 0.42;
 const HURDLE_GAP_MIN = 11.8;
 const HURDLE_GAP_MAX = 14.5;
 const LASER_CHANCE = 0.38;
-/** Drošības attālums, ja lodziņu sadursme izlaiž kadru */
-/** Ja lodziņi izlaiž kadru — joprojām «noķer» */
-const CATCH_DIST = 2.85;
-/** Nūjas trieciena paplašinājums (laipnīgāk trāpa) */
-const STICK_HIT_PAD = 0.48;
+/** Spēles beigas, kad bomzis pietuvojies šim (z virzienā + lodes tests) */
+const CATCH_DIST = 3.05;
+/** Ķermeņu centru attālums — uzticamāks par lodziņiem */
+const BOMZI_HIT_RADIUS = 2.95;
+/** «Sitiena» tuvināšanās uz priekšu, kad jau tuvu */
+const STRIKE_LUNGE_SPEED = 22;
+/** Nūjas lodziņa paplašinājums */
+const STICK_HIT_PAD = 1.05;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
 
@@ -426,22 +430,28 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
             );
       }
 
-      const targetGap = stumble > 0 ? 4 : CHASE_SAFE;
+      const targetGap = stumble > 0 ? 2.25 : CHASE_SAFE;
       const targetBz = pz - targetGap;
-      const gapBefore = pz - bomzi.position.z;
+      const gapPrev = pz - bomzi.position.z;
       const rush =
-        gapBefore < 9 ? 1 + ((9 - gapBefore) / 9) * 0.95 : 1;
+        gapPrev < 10 ? 1 + ((10 - gapPrev) / 10) * 1.05 : 1;
       bomzi.position.z = THREE.MathUtils.lerp(
         bomzi.position.z,
         targetBz,
-        Math.min(1, (stumble > 0 ? 6 : 2.85) * rush * dt),
+        Math.min(1, (stumble > 0 ? 7 : 3.9) * rush * dt),
       );
       bomzi.position.x = THREE.MathUtils.lerp(bomzi.position.x, 0, Math.min(1, 10 * dt));
       bomzi.position.y = 0;
       bomzi.lookAt(px, py + 0.95, pz + 4);
 
+      let gapNow = pz - bomzi.position.z;
+      if (gapNow < 8 && gapNow > 0.18) {
+        const room = Math.max(0, gapNow - 0.95);
+        bomzi.position.z += Math.min(STRIKE_LUNGE_SPEED * dt, room);
+      }
+      gapNow = pz - bomzi.position.z;
+
       const bu = bomzi.userData;
-      const gapNow = pz - bomzi.position.z;
       const close01 = THREE.MathUtils.clamp((10 - gapNow) / 10, 0, 1);
       if (bu?.stick) {
         bu.swingT = (bu.swingT || 0) + dt * (12 + close01 * 18);
@@ -525,8 +535,12 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
       bomzi.updateMatrixWorld(true);
       const ud = bomzi.userData;
-      let bomziConnected = false;
-      if (ud?.stick) {
+      const dx = px - bomzi.position.x;
+      const dy = py + 0.92 - 1.06;
+      const dz = pz - bomzi.position.z;
+      const hitRs = BOMZI_HIT_RADIUS * BOMZI_HIT_RADIUS;
+      let bomziConnected = dx * dx + dy * dy + dz * dz < hitRs;
+      if (!bomziConnected && ud?.stick) {
         ud.stick.updateMatrixWorld(true);
         const stickBox = new THREE.Box3()
           .setFromObject(ud.stick)
