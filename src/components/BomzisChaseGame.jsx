@@ -373,17 +373,17 @@ export default function BomzisChaseGame({
         roughness: 0.74,
       });
       const h = 1.08;
-      const w = 0.92;
+      const w = 0.84;
       const d = 1.02;
       const geom = new THREE.BoxGeometry(w, h, d);
       const meshL = new THREE.Mesh(geom, mat);
       meshL.castShadow = true;
       meshL.receiveShadow = true;
-      meshL.position.set(-1.2, h * 0.5, 0);
+      meshL.position.set(-1.56, h * 0.5, 0);
       const meshR = new THREE.Mesh(geom, mat);
       meshR.castShadow = true;
       meshR.receiveShadow = true;
-      meshR.position.set(1.2, h * 0.5, 0);
+      meshR.position.set(1.56, h * 0.5, 0);
       const root = new THREE.Group();
       root.add(meshL, meshR);
       root.position.set(0, 0, aheadZ);
@@ -401,11 +401,14 @@ export default function BomzisChaseGame({
      * Jānobīdās uz malu un jālec pāri bedrei uz otru malu.
      */
     function spawnPitSpan(aheadZ) {
-      const pitHalfWidth = 0.91;
-      const pitHalfZ = 0.69;
-      const platW = 1.06;
+      /** Zemes «bedres» rinda x — |px| zem šī uz zemes = kritiens (atbilst spraugai starp platformām) */
+      const platW = 1.02;
+      const platCx = 1.76;
+      const innerEdge = platCx - platW * 0.5;
+      const pitHalfWidth = innerEdge;
+      const pitHalfZ = 0.76;
       const platH = 0.54;
-      const platD = 1.38;
+      const platD = 1.48;
       const matPlat = new THREE.MeshStandardMaterial({
         color: Math.random() < 0.5 ? 0x6f5e48 : 0x8c744c,
         roughness: 0.8,
@@ -414,17 +417,18 @@ export default function BomzisChaseGame({
       const leftPlat = new THREE.Mesh(geom, matPlat);
       leftPlat.castShadow = true;
       leftPlat.receiveShadow = true;
-      leftPlat.position.set(-1.44, platH * 0.5, 0);
+      leftPlat.position.set(-platCx, platH * 0.5, 0);
       const rightPlat = new THREE.Mesh(geom, matPlat);
       rightPlat.castShadow = true;
       rightPlat.receiveShadow = true;
-      rightPlat.position.set(1.44, platH * 0.5, 0);
+      rightPlat.position.set(platCx, platH * 0.5, 0);
       const pitMat = new THREE.MeshStandardMaterial({
         color: 0x15151c,
         roughness: 1,
       });
+      const pitGapVisW = innerEdge * 2 + 0.06;
       const pitVis = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.88, platD * 0.94),
+        new THREE.PlaneGeometry(pitGapVisW, platD * 0.94),
         pitMat,
       );
       pitVis.rotation.x = -Math.PI / 2;
