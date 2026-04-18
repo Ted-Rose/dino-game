@@ -10,10 +10,15 @@ import BomzisChaseGame, {
 import {
   BOMZISCHASE_HACK_CHANGED,
   BOMZISCHASE_REVIVED_EVENT,
+  HACK_DEFS,
+  HACK_KIND_ORDER,
   HACK_PACK_AMOUNT,
   HACK_PACK_PRICE,
+  getHackDef,
   loadHacks,
+  loadSelectedHackKind,
   saveHacks,
+  saveSelectedHackKind,
 } from '../data/bomzischaseHacks';
 import {
   CUSTOM_SKIN_ID,
@@ -49,6 +54,7 @@ export default function BomzisChasePage() {
     braking: false,
     hacks: 0,
     hackInvuln: 0,
+    hackKind: 'shield',
   });
   const [gameOver, setGameOver] = useState(null);
   const [touchUi, setTouchUi] = useState(false);
@@ -57,6 +63,9 @@ export default function BomzisChasePage() {
   );
   const [hacks, setHacks] = useState(() =>
     typeof window !== 'undefined' ? loadHacks() : 0,
+  );
+  const [hackKindSel, setHackKindSel] = useState(() =>
+    typeof window !== 'undefined' ? loadSelectedHackKind() : 'shield',
   );
   const [owned, setOwned] = useState(initOwnedIds);
   const [equipped, setEquipped] = useState(() =>
@@ -118,6 +127,32 @@ export default function BomzisChasePage() {
     return () => window.removeEventListener(BOMZISCHASE_HACK_CHANGED, sync);
   }, []);
 
+  const pickHackKind = useCallback((id) => {
+    if (!HACK_DEFS[id]) return;
+    saveSelectedHackKind(id);
+    setHackKindSel(id);
+  }, []);
+
+  useEffect(() => {
+    const onDigit = (e) => {
+      const t = e.target;
+      if (
+        t &&
+        typeof t.closest === 'function' &&
+        t.closest('input, textarea, select')
+      ) {
+        return;
+      }
+      const digitMap = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 };
+      const idx = digitMap[e.code];
+      if (idx === undefined) return;
+      const id = HACK_KIND_ORDER[idx];
+      if (id) pickHackKind(id);
+    };
+    window.addEventListener('keydown', onDigit);
+    return () => window.removeEventListener('keydown', onDigit);
+  }, [pickHackKind]);
+
   useEffect(() => {
     const onRevived = () => setGameOver(null);
     window.addEventListener(BOMZISCHASE_REVIVED_EVENT, onRevived);
@@ -156,8 +191,12 @@ export default function BomzisChasePage() {
   }, []);
 
   const fireHack = useCallback(() => {
-    window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_EVENT));
-  }, []);
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_HACK_EVENT, {
+        detail: { kind: hackKindSel },
+      }),
+    );
+  }, [hackKindSel]);
 
   const fireStrafeLeftDown = useCallback(() => {
     window.dispatchEvent(
@@ -315,6 +354,26 @@ export default function BomzisChasePage() {
           Maciņā: <strong>{wallet}</strong> naudiņas · uzvelc izskatu — spēle ar jaunu avatāru
           atsāksies
         </p>
+        <div className="bomzischase-hack-kinds">
+          <p className="bomzischase-hack-kinds__hint">
+            Haku veidi (viens krājums visiem): izvēlies pirms <kbd>H</kbd> vai pogas ·{' '}
+            <kbd>1</kbd>–<kbd>4</kbd>.
+          </p>
+          <div className="bomzischase-hack-kinds__row">
+            {HACK_KIND_ORDER.map((id, i) => (
+              <button
+                key={id}
+                type="button"
+                className={`bomzischase-hack-chip${hackKindSel === id ? ' bomzischase-hack-chip--on' : ''}`}
+                title={getHackDef(id).hint}
+                onClick={() => pickHackKind(id)}
+              >
+                <span className="bomzischase-hack-chip__kbd">{i + 1}</span>
+                {getHackDef(id).label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="bomzischase-hack-pack">
           <button
             type="button"
@@ -481,10 +540,13 @@ export default function BomzisChasePage() {
           </span>
           <span>
             Haki: <strong>{hud.hacks ?? hacks}</strong>
+            {' · '}
+            Veids: <strong>{getHackDef(hackKindSel).label}</strong>
             {(hud.hackInvuln ?? 0) > 0 && (
               <span className="bomzischase-hack-active">
                 {' '}
-                · haks ~{(hud.hackInvuln ?? 0).toFixed(1)} s
+                · {getHackDef(hud.hackKind ?? hackKindSel).label}{' '}
+                ~{(hud.hackInvuln ?? 0).toFixed(1)} s
               </span>
             )}
           </span>
@@ -557,8 +619,9 @@ export default function BomzisChasePage() {
             <>
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens,
-              «<span className="bomzischase-help-strong">Haks</span>» — īsa aizsardzība vai
-              atdzīvināšana (ja ir haki). Kreisi/labi — sāņus slīdēt; tumšajā bedrē zemē vidū
+              «<span className="bomzischase-help-strong">Haks</span>» — četri haka veidi bodē, jāizvēlas
+              pirms lietošanas; aizsardzība vai pēc zaudējuma atdzīvināšana. Kreisi/labi — sāņus
+              slīdēt; tumšajā bedrē
               jālec pāri uz otru malu. Arī augstas sienas, platāki baļķi, stabu sprauga;
               zemie klucīši — trieciens;{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
@@ -569,7 +632,8 @@ export default function BomzisChasePage() {
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
               apstāties · <kbd>A</kbd>/<kbd>D</kbd> vai <kbd>←</kbd>/<kbd>→</kbd> — sāņus
-              slīdēt · <kbd>H</kbd> — haks vai pēc zaudējuma atdzīvoties. Tumšā bedre: sāk no
+              slīdēt · <kbd>1</kbd>–<kbd>4</kbd> haka veids · <kbd>H</kbd> — haks (pirms tam
+              izvēlies veidu bodē) vai pēc zaudējuma atdzīvoties. Tumšā bedre: sāk no
               vienas malas lec pāri vidum uz otru malu. Citi šķēršļi — zemie klucīši un platie
               baļķi, augstas sienas (augstāks lēciens), stabu sprauga,{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}

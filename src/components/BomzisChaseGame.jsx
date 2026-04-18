@@ -5,8 +5,10 @@ import {
   BOMZISCHASE_HACK_EVENT,
   BOMZISCHASE_REVIVED_EVENT,
   BOMZISCHASE_REVIVE_EVENT,
-  HACK_INVULN_SEC,
+  getHackDef,
   loadHacks,
+  loadSelectedHackKind,
+  normalizeHackKind,
   saveHacks,
 } from '../data/bomzischaseHacks';
 
@@ -532,6 +534,8 @@ export default function BomzisChaseGame({
     let runAnimT = 0;
     let wantJump = false;
     let wantHack = false;
+    let pendingHackKind = null;
+    let activeHackKind = loadSelectedHackKind();
     let hackInvuln = 0;
 
     bomzi.position.set(0, 0, pz - CHASE_SAFE);
@@ -562,7 +566,7 @@ export default function BomzisChaseGame({
       if (h < 1) return;
       saveHacks(h - 1);
       ended = false;
-      hackInvuln = HACK_INVULN_SEC;
+      hackInvuln = getHackDef('shield').invulnSec;
       stumble = 0;
       bomzi.position.z -= 14;
       window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_CHANGED));
@@ -589,7 +593,10 @@ export default function BomzisChaseGame({
       }
       if (e.code === 'KeyH') {
         if (ended) tryRevive();
-        else wantHack = true;
+        else {
+          wantHack = true;
+          pendingHackKind = loadSelectedHackKind();
+        }
         e.preventDefault();
       }
     };
@@ -614,9 +621,14 @@ export default function BomzisChaseGame({
     const onBrakeEvent = (e) => {
       keys.brake = Boolean(e.detail?.down);
     };
-    const onHackEvent = () => {
+    const onHackEvent = (e) => {
       if (ended) tryRevive();
-      else wantHack = true;
+      else {
+        wantHack = true;
+        pendingHackKind = normalizeHackKind(
+          e.detail?.kind != null ? e.detail.kind : loadSelectedHackKind(),
+        );
+      }
     };
     const onReviveEvent = () => {
       tryRevive();
@@ -647,11 +659,18 @@ export default function BomzisChaseGame({
       if (wantHack) {
         wantHack = false;
         const h = loadHacks();
+        const kind = normalizeHackKind(
+          pendingHackKind ?? loadSelectedHackKind(),
+        );
+        pendingHackKind = null;
+        const def = getHackDef(kind);
         if (h > 0 && hackInvuln <= 1e-6) {
           saveHacks(h - 1);
-          hackInvuln = HACK_INVULN_SEC;
+          activeHackKind = kind;
+          hackInvuln = def.invulnSec;
           stumble = 0;
-          bomzi.position.z -= 12;
+          bomzi.position.z -= def.bomziKick;
+          if (def.vyBoost > 0) vy += def.vyBoost;
           window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_CHANGED));
         }
       }
@@ -895,6 +914,7 @@ export default function BomzisChaseGame({
         braking: brakeHeld,
         hacks: loadHacks(),
         hackInvuln,
+        hackKind: activeHackKind,
       });
 
       if (!immune && distCatch < CATCH_DIST) {

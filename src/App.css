@@ -831,6 +831,75 @@
   color: #3d4a5c;
 }
 
+.bomzischase-hack-kinds {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2dce8;
+  background: #fdfcff;
+  box-sizing: border-box;
+}
+
+.bomzischase-hack-kinds__hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.45;
+}
+
+.bomzischase-hack-kinds__hint kbd {
+  background: #eee;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+}
+
+.bomzischase-hack-kinds__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bomzischase-hack-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid #c8bdd8;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a3d58;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.bomzischase-hack-chip:hover {
+  border-color: #9a7ab8;
+  background: #faf7ff;
+}
+
+.bomzischase-hack-chip--on {
+  border-color: #7a4e9c;
+  background: linear-gradient(180deg, #efe6f8 0%, #e8dcf4 100%);
+  color: #3d2848;
+  box-shadow: 0 2px 0 #c5b0d8;
+}
+
+.bomzischase-hack-chip__kbd {
+  display: inline-block;
+  min-width: 1.25em;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #666;
+  background: #eee;
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+
 .bomzischase-hack-pack {
   display: flex;
   flex-wrap: wrap;
