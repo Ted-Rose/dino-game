@@ -1,11 +1,14 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const LANES = [-2.5, 0, 2.5];
 const RUN_SPEED = 15;
 const GRAVITY = 42;
 const JUMP_V = 13;
 const CHASE_SAFE = 11;
+/** Kamera aiz spēlētāja (mazāks Z nekā spēlētājs, jo skrien uz +Z) */
+const CAM_DIST_BACK = 9.4;
+const HURDLE_GAP_MIN = 6.6;
+const HURDLE_GAP_MAX = 8.1;
 const CATCH_DIST = 2.2;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
@@ -87,6 +90,7 @@ function makeRobloxPlayerMesh() {
   }
 
   root.rotation.y = Math.PI;
+  root.scale.setScalar(1.28);
   root.userData.rig = { legL, legR, armL, armR, torso, head };
   return root;
 }
@@ -138,10 +142,10 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xb8c4d8);
-    scene.fog = new THREE.Fog(0xb8c4d8, 28, 130);
+    scene.fog = new THREE.Fog(0xb8c4d8, 35, 145);
 
-    const camera = new THREE.PerspectiveCamera(62, 1, 0.2, 200);
-    camera.position.set(0, 4.35, 13.5);
+    const camera = new THREE.PerspectiveCamera(58, 1, 0.15, 220);
+    camera.position.set(0, 4.85, 4 - CAM_DIST_BACK);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -175,6 +179,10 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     sun.shadow.camera.bottom = -35;
     scene.add(sun);
 
+    const fill = new THREE.DirectionalLight(0xe8f0ff, 0.38);
+    fill.position.set(10, 14, -20);
+    scene.add(fill);
+
     const groundGeo = new THREE.PlaneGeometry(220, 900);
     const groundMat = new THREE.MeshStandardMaterial({
       color: 0x9aab78,
@@ -206,80 +214,59 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
     const obstacles = [];
 
+    /** Viens vidus ceļš — tikai zemie šķēršļi secīgi (lēcienu ķēde) */
     function spawnObstacle(aheadZ) {
-      const lane = Math.floor(Math.random() * 3);
-      const x = LANES[lane];
-      const typ = Math.random() < 0.72 ? 'low' : 'wall';
-
-      let mesh;
-      if (typ === 'low') {
-        mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(2.35, 0.62, 1.05),
-          new THREE.MeshStandardMaterial({
-            color: Math.random() < 0.5 ? 0xc49a62 : 0xb87a48,
-            roughness: 0.78,
-          }),
-        );
-        mesh.position.set(x, 0.31, aheadZ);
-      } else {
-        mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(2.6, 2.35, 1),
-          new THREE.MeshStandardMaterial({ color: 0x6d5a4a, roughness: 0.78 }),
-        );
-        mesh.position.set(x, 1.175, aheadZ);
-      }
+      const x = 0;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(2.55, 0.7, 1.08),
+        new THREE.MeshStandardMaterial({
+          color: Math.random() < 0.5 ? 0xd4a85c : 0xc2783a,
+          roughness: 0.76,
+        }),
+      );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      mesh.position.set(x, 0.35, aheadZ);
       scene.add(mesh);
       obstacles.push({
         mesh,
         z: aheadZ,
         x,
-        lane,
-        typ,
-        laneIndex: lane,
+        typ: 'low',
+        laneIndex: 1,
       });
     }
 
-    let laneIdx = 1;
-    let targetX = LANES[laneIdx];
-    let px = LANES[laneIdx];
+    const px = 0;
     let pz = 4;
     let py = 0;
     let vy = 0;
     let stumble = 0;
     let score = 0;
     let runAnimT = 0;
+    let wantJump = false;
 
-    bomzi.position.set(px * 0.6, 0, pz - CHASE_SAFE);
+    bomzi.position.set(0, 0, pz - CHASE_SAFE);
 
-    let spawnZ = pz + 35;
-    for (let i = 0; i < 18; i++) {
-      spawnObstacle(spawnZ + i * 11 + Math.random() * 5);
+    let nextZ = pz + 20;
+    for (let i = 0; i < 28; i++) {
+      spawnObstacle(nextZ);
+      nextZ +=
+        HURDLE_GAP_MIN + Math.random() * (HURDLE_GAP_MAX - HURDLE_GAP_MIN);
     }
 
-    const keys = {};
     const onKd = (e) => {
-      keys[e.code] = true;
-      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
-        laneIdx = Math.max(0, laneIdx - 1);
-        targetX = LANES[laneIdx];
-      }
-      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-        laneIdx = Math.min(2, laneIdx + 1);
-        targetX = LANES[laneIdx];
-      }
       if (e.code === 'Space' || e.code === 'ArrowUp') {
-        if (py < 0.05) vy = JUMP_V;
+        wantJump = true;
+        e.preventDefault();
       }
+    };
+    const onPointerJump = (e) => {
+      wantJump = true;
       e.preventDefault();
     };
-    const onKu = (e) => {
-      keys[e.code] = false;
-    };
     window.addEventListener('keydown', onKd);
-    window.addEventListener('keyup', onKu);
-
+    wrap.addEventListener('pointerdown', onPointerJump);
     let raf = 0;
 
     function loop() {
@@ -289,7 +276,8 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
       stumble = Math.max(0, stumble - dt);
 
-      px += (targetX - px) * Math.min(1, 14 * dt);
+      if (wantJump && py < 0.05) vy = JUMP_V;
+      wantJump = false;
 
       py += vy * dt;
       vy -= GRAVITY * dt;
@@ -338,18 +326,14 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
         targetBz,
         Math.min(1, (stumble > 0 ? 6 : 2.5) * dt),
       );
-      bomzi.position.x = THREE.MathUtils.lerp(
-        bomzi.position.x,
-        px,
-        Math.min(1, 10 * dt),
-      );
+      bomzi.position.x = THREE.MathUtils.lerp(bomzi.position.x, 0, Math.min(1, 10 * dt));
       bomzi.position.y = 0;
       bomzi.lookAt(px, py + 0.9, pz + 2);
 
-      camera.position.x += (px * 0.75 - camera.position.x) * 6 * dt;
-      camera.position.z = pz + 9.5;
-      camera.position.y = 4.35 + py * 0.32;
-      camera.lookAt(px, py + 1.05, pz + 22);
+      camera.position.x += (px - camera.position.x) * Math.min(1, 10 * dt);
+      camera.position.z = pz - CAM_DIST_BACK;
+      camera.position.y = 4.75 + py * 0.38;
+      camera.lookAt(px, py + 1.25, pz + 38);
 
       player.updateMatrixWorld(true);
       const playerBox = new THREE.Box3().setFromObject(player);
@@ -365,19 +349,20 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
         const box = new THREE.Box3().setFromObject(o.mesh);
         if (playerBox.intersectsBox(box)) {
           let ok = false;
-          if (o.typ === 'low' && py > 0.88) ok = true;
-          if (o.typ === 'wall' && Math.abs(px - o.x) > 1.38) ok = true;
+          if (o.typ === 'low' && py > 1.02) ok = true;
           if (!ok) stumble = STUMBLE_TIME;
         }
       }
 
       while (
         obstacles.length === 0 ||
-        obstacles[obstacles.length - 1].z < pz + 55
+        obstacles[obstacles.length - 1].z < pz + 60
       ) {
         const lastZ =
           obstacles.length > 0 ? obstacles[obstacles.length - 1].z : pz;
-        spawnObstacle(lastZ + 9 + Math.random() * 10);
+        const gap =
+          HURDLE_GAP_MIN + Math.random() * (HURDLE_GAP_MAX - HURDLE_GAP_MIN);
+        spawnObstacle(lastZ + gap);
       }
 
       const distCatch = pz - bomzi.position.z;
@@ -407,7 +392,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', fit);
       window.removeEventListener('keydown', onKd);
-      window.removeEventListener('keyup', onKu);
+      wrap.removeEventListener('pointerdown', onPointerJump);
       renderer.dispose();
       if (renderer.domElement.parentNode === wrap) {
         wrap.removeChild(renderer.domElement);

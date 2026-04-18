@@ -15,8 +15,8 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Klucīšu skrējējs kā Robloxā — lec pār šķēršļiem, kamēr bomzis ar koku dzenas
-          pakaļ
+          Tu redzi savu klucīšu avatāru no muguras — secīgi zemie šķēršļi vienā līnijā,
+          lec no viena uz nākamo; bomzis ar koku dzenas pakaļ
         </p>
       </div>
 
@@ -46,10 +46,9 @@ export default function BomzisChasePage() {
 
       <section className="bomzischase-help">
         <p>
-          <kbd>A</kbd> / <kbd>D</kbd> vai <kbd>←</kbd> <kbd>→</kbd> — mainīt joslu ·{' '}
-          <kbd>Space</kbd> vai <kbd>↑</kbd> — lēkt pār zemajiem šķēršļiem · augstās
-          sienas — apiet citā joslā. Pret triecienu bomzis pietuvojas — neļauj viņam
-          klāt!
+          <kbd>Space</kbd> vai <kbd>↑</kbd> — lēkt · skārienekrānā pieskaries laukumam.
+          Šķēršļi ir vienā rindā priekšā — lai tiktu pāri, jālēkā no viena uz nākamo.
+          Pret triecienu bomzis pietuvojas — neļauj viņam klāt!
         </p>
       </section>
     </div>
