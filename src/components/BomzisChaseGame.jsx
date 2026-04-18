@@ -3,6 +3,12 @@ import * as THREE from 'three';
 import { getSkin } from '../data/bomzischaseSkins';
 
 const RUN_SPEED = 15;
+/** Ik pēc tik «naudiņu» (skriešanas punktiem) pieaug kopējais ātrums */
+const SPEED_BRACKET = 10;
+/** Reizinātāja pieaugums katram solim (piem. 0.06 ≈ +6%) */
+const SPEED_MULT_PER_BRACKET = 0.058;
+/** Lai spēle paliek vadāma zem augstiem punktiem */
+const SPEED_MULT_CAP = 2.35;
 const GRAVITY = 42;
 const JUMP_V = 13;
 /** Mērķa attālums skrienot — jābūt pietiekami mazam, lai var «trāpīt» */
@@ -393,7 +399,15 @@ export default function BomzisChaseGame({
     function loop() {
       if (ended) return;
       const dt = Math.min(clock.getDelta(), 0.08);
-      const spd = RUN_SPEED * (stumble > 0 ? STUMBLE_SLOW : 1);
+      const speedBracket = Math.floor(score / SPEED_BRACKET);
+      const speedMult = Math.min(
+        SPEED_MULT_CAP,
+        1 + speedBracket * SPEED_MULT_PER_BRACKET,
+      );
+      const spd =
+        RUN_SPEED *
+        speedMult *
+        (stumble > 0 ? STUMBLE_SLOW : 1);
       const brakeHeld = keys.brake;
       const forwardSpd = brakeHeld ? 0 : spd;
 
@@ -452,16 +466,26 @@ export default function BomzisChaseGame({
       bomzi.position.z = THREE.MathUtils.lerp(
         bomzi.position.z,
         targetBz,
-        Math.min(1, (stumble > 0 ? 7 : 3.9) * rush * dt),
+        Math.min(
+          1,
+          (stumble > 0 ? 7 : 3.9) * rush * speedMult * dt,
+        ),
       );
-      bomzi.position.x = THREE.MathUtils.lerp(bomzi.position.x, 0, Math.min(1, 10 * dt));
+      bomzi.position.x = THREE.MathUtils.lerp(
+        bomzi.position.x,
+        0,
+        Math.min(1, 10 * speedMult * dt),
+      );
       bomzi.position.y = 0;
       bomzi.lookAt(px, py + 0.95, pz + 4);
 
       let gapNow = pz - bomzi.position.z;
       if (gapNow < 8 && gapNow > 0.18) {
         const room = Math.max(0, gapNow - 0.95);
-        bomzi.position.z += Math.min(STRIKE_LUNGE_SPEED * dt, room);
+        bomzi.position.z += Math.min(
+          STRIKE_LUNGE_SPEED * speedMult * dt,
+          room,
+        );
       }
       gapNow = pz - bomzi.position.z;
 
@@ -601,6 +625,8 @@ export default function BomzisChaseGame({
         score: Math.floor(score),
         gap: Math.max(0, Math.round(distCatch * 10) / 10),
         braking: brakeHeld,
+        speedBracket,
+        speedMult: Math.round(speedMult * 100) / 100,
       });
 
       if (distCatch < CATCH_DIST) {
