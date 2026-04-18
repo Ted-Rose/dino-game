@@ -2,12 +2,17 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 const NIGHT_GOAL = 99;
-const NIGHT_SEC = 22;
+const DAY_SEC = 32;
+const NIGHT_SEC = 26;
 const WORLD_HALF = 48;
 const FIRE_SAFE_R = 7;
 const COLD_START_R = 22;
 const PLAYER_H = 1.45;
 const PLAYER_R = 0.45;
+const CHOP_RANGE = 3.4;
+const FEED_FIRE_RANGE = 5.5;
+const CHOP_COOLDOWN = 0.45;
+const FEED_COOLDOWN = 0.35;
 
 function mulberry32(a) {
   return function () {
@@ -38,8 +43,6 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     const rand = mulberry32(0x991f04e7);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x182630);
-    scene.fog = new THREE.FogExp2(0x243944, 0.014);
 
     const camera = new THREE.PerspectiveCamera(72, 1, 0.12, 220);
     camera.position.set(0, PLAYER_H, 6);
@@ -117,22 +120,29 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4030, roughness: 1 });
     const crownMat = new THREE.MeshStandardMaterial({ color: 0x1e4a32, roughness: 0.92 });
 
+    const trees = [];
+
     for (let i = 0; i < 220; i++) {
       const x = (rand() - 0.5) * WORLD_HALF * 1.85;
       const z = (rand() - 0.5) * WORLD_HALF * 1.85;
       if (x * x + z * z < 14 * 14) continue;
+      const s = 0.75 + rand() * 0.85;
       const trunk = new THREE.Mesh(trunkGeo, trunkMat);
       const crown = new THREE.Mesh(crownGeo, crownMat);
-      const s = 0.75 + rand() * 0.85;
-      trunk.position.set(x, 1.6 * s, z);
       trunk.scale.setScalar(s);
+      crown.scale.setScalar(s);
+      trunk.position.set(0, 1.6 * s, 0);
+      crown.position.set(0, 4.2 * s, 0);
       trunk.castShadow = true;
       trunk.receiveShadow = true;
-      crown.position.set(x, 4.2 * s, z);
-      crown.scale.setScalar(s);
       crown.castShadow = true;
       crown.receiveShadow = true;
-      scene.add(trunk, crown);
+
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+      group.add(trunk, crown);
+      scene.add(group);
+      trees.push(group);
     }
 
     const fireGroup = new THREE.Group();
@@ -173,6 +183,8 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     fireLight.shadow.bias = -0.0008;
     fireGroup.add(fireLight);
     scene.add(fireGroup);
+
+    let fireFuel = 72;
 
     const lookTarget = new THREE.Vector3();
 
@@ -216,12 +228,15 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     window.addEventListener('mousemove', onMouseMove);
     renderer.domElement.addEventListener('click', onClick);
 
-    let night = 1;
-    let nightLeft = NIGHT_SEC;
+    let survivedNights = 0;
+    let isDay = true;
+    let phaseLeft = DAY_SEC;
     let hp = 100;
+    let wood = 0;
+    /** @type {{ mesh: THREE.Group; speed: number; kind: 'shadow' | 'animal' }[]} */
     let enemies = [];
 
-    function spawnEnemy() {
+    function spawnShadowEnemy() {
       const angle = rand() * Math.PI * 2;
       const dist = 35 + rand() * 12;
       const group = new THREE.Group();
@@ -254,18 +269,99 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       scene.add(group);
       enemies.push({
         mesh: group,
-        speed: 2.6 + night * 0.06 + rand() * 0.8,
+        speed: 2.45 + survivedNights * 0.055 + rand() * 0.75,
+        kind: 'shadow',
       });
     }
 
-    function resetNightEnemies() {
-      enemies.forEach((e) => scene.remove(e.mesh));
-      enemies = [];
-      const count = Math.min(3 + Math.floor(night / 4), 14);
-      for (let i = 0; i < count; i++) spawnEnemy();
+    function spawnAnimalEnemy() {
+      const angle = rand() * Math.PI * 2;
+      const dist = 32 + rand() * 14;
+      const group = new THREE.Group();
+      group.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 0.65, 0.55),
+        new THREE.MeshStandardMaterial({
+          color: 0x6b4428,
+          roughness: 0.95,
+        })
+      );
+      body.position.y = 0.55;
+      body.castShadow = true;
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.55, 0.5, 0.65),
+        new THREE.MeshStandardMaterial({
+          color: 0x5a3a22,
+          roughness: 0.95,
+        })
+      );
+      head.position.set(0, 0.75, 0.45);
+      head.castShadow = true;
+
+      const tail = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.14, 0.55, 6),
+        new THREE.MeshStandardMaterial({ color: 0x4a3018, roughness: 1 })
+      );
+      tail.rotation.z = Math.PI / 2.4;
+      tail.position.set(0, 0.45, -0.55);
+
+      group.add(body, head, tail);
+      scene.add(group);
+      enemies.push({
+        mesh: group,
+        speed: 3.1 + survivedNights * 0.07 + rand() * 0.9,
+        kind: 'animal',
+      });
     }
 
-    resetNightEnemies();
+    function clearEnemies() {
+      enemies.forEach((e) => scene.remove(e.mesh));
+      enemies = [];
+    }
+
+    function spawnEnemiesForCurrentPhase() {
+      clearEnemies();
+      const animalCount = Math.min(2 + Math.floor(survivedNights / 3), 14);
+      for (let i = 0; i < animalCount; i++) spawnAnimalEnemy();
+
+      if (isDay) {
+        const shadowCount = Math.min(2 + Math.floor(survivedNights / 5), 11);
+        for (let i = 0; i < shadowCount; i++) spawnShadowEnemy();
+      }
+    }
+
+    function applyDayNightVisuals() {
+      if (isDay) {
+        scene.background = new THREE.Color(0x7ec8e8);
+        scene.fog = new THREE.FogExp2(0xa8d4e8, 0.007);
+        amb.color.setHex(0x9ecfff);
+        amb.groundColor.setHex(0x6a8a5a);
+        amb.intensity = 0.78;
+        moonLight.color.setHex(0xfff4dd);
+        moonLight.intensity = 1.05;
+        moonLight.position.set(55, 95, 35);
+        fill.intensity = 0.42;
+        fill.color.setHex(0xffeed0);
+        groundMat.color.setHex(0x4a7a58);
+      } else {
+        scene.background = new THREE.Color(0x182630);
+        scene.fog = new THREE.FogExp2(0x243944, 0.014);
+        amb.color.setHex(0x6a9cba);
+        amb.groundColor.setHex(0x2a3844);
+        amb.intensity = 0.62;
+        moonLight.color.setHex(0xd4e8ff);
+        moonLight.intensity = 0.78;
+        moonLight.position.set(-40, 80, 20);
+        fill.intensity = 0.22;
+        fill.color.setHex(0xa8c8e8);
+        groundMat.color.setHex(0x355a42);
+      }
+    }
+
+    applyDayNightVisuals();
+    spawnEnemiesForCurrentPhase();
 
     function resolvePlayerXZ(nx, nz) {
       let x = nx;
@@ -276,18 +372,62 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       return { x, z };
     }
 
+    let chopCd = 0;
+    let feedCd = 0;
+    let prevE = false;
+    let prevF = false;
+
+    function tryChopTree() {
+      if (chopCd > 0 || trees.length === 0) return;
+      const px = player.position.x;
+      const pz = player.position.z;
+      let best = -1;
+      let bestD = CHOP_RANGE;
+      for (let i = 0; i < trees.length; i++) {
+        const g = trees[i];
+        const dx = g.position.x - px;
+        const dz = g.position.z - pz;
+        const d = Math.hypot(dx, dz);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      }
+      if (best < 0) return;
+      chopCd = CHOP_COOLDOWN;
+      const removed = trees.splice(best, 1)[0];
+      scene.remove(removed);
+      wood += 1 + Math.floor(rand() * 2);
+    }
+
+    function tryFeedFire() {
+      if (feedCd > 0 || wood <= 0) return;
+      const distFire = Math.hypot(player.position.x, player.position.z);
+      if (distFire > FEED_FIRE_RANGE) return;
+      feedCd = FEED_COOLDOWN;
+      wood -= 1;
+      fireFuel = Math.min(100, fireFuel + 34);
+    }
+
     function pushHud(force = false) {
       const now = performance.now();
       if (!force && now - hudThrottle.current < 120) return;
       hudThrottle.current = now;
       const distFire = Math.hypot(player.position.x, player.position.z);
+      const phaseLen = isDay ? DAY_SEC : NIGHT_SEC;
       hudCb.current?.({
-        night,
+        isDay,
+        survivedNights,
         nightGoal: NIGHT_GOAL,
-        nightLeft: Math.max(0, nightLeft),
+        phaseLeft: Math.max(0, phaseLeft),
+        phaseLen,
         hp: Math.max(0, Math.round(hp)),
         nearFire: distFire < FIRE_SAFE_R,
-        cold: distFire > COLD_START_R,
+        cold: isDay && distFire > COLD_START_R,
+        wood,
+        fireFuel: Math.round(fireFuel),
+        canChop: trees.length > 0,
+        canFeedFire: wood > 0 && distFire <= FEED_FIRE_RANGE,
       });
     }
 
@@ -310,6 +450,14 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       raf = requestAnimationFrame(animate);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
+
+      if (keys.KeyE && !prevE) tryChopTree();
+      if (keys.KeyF && !prevF) tryFeedFire();
+      prevE = keys.KeyE;
+      prevF = keys.KeyF;
+
+      chopCd = Math.max(0, chopCd - dt);
+      feedCd = Math.max(0, feedCd - dt);
 
       euler.set(pitch, yaw, 0, 'YXZ');
       camera.quaternion.setFromEuler(euler);
@@ -352,24 +500,39 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       player.position.x = x;
       player.position.z = z;
 
-      nightLeft -= dt;
-      if (nightLeft <= 0) {
-        if (night >= NIGHT_GOAL) {
-          endGame(true);
-          return;
+      phaseLeft -= dt;
+      if (phaseLeft <= 0) {
+        if (isDay) {
+          isDay = false;
+          phaseLeft = NIGHT_SEC;
+          applyDayNightVisuals();
+          spawnEnemiesForCurrentPhase();
+        } else {
+          survivedNights += 1;
+          if (survivedNights >= NIGHT_GOAL) {
+            endGame(true);
+            return;
+          }
+          isDay = true;
+          phaseLeft = DAY_SEC;
+          hp = Math.min(100, hp + 10);
+          applyDayNightVisuals();
+          spawnEnemiesForCurrentPhase();
         }
-        night += 1;
-        nightLeft = NIGHT_SEC;
-        hp = Math.min(100, hp + 12);
-        resetNightEnemies();
       }
 
       const distFire = Math.hypot(player.position.x, player.position.z);
 
-      if (distFire > COLD_START_R) {
-        hp -= 7 * dt;
-      } else if (distFire < FIRE_SAFE_R) {
-        hp += 4 * dt;
+      const decay = isDay ? 0.55 : 0.95;
+      fireFuel = Math.max(5, fireFuel - decay * dt);
+
+      fireLight.distance = 28 + fireFuel * 0.12;
+
+      if (isDay && distFire > COLD_START_R) {
+        hp -= 6.5 * dt;
+      }
+      if (distFire < FIRE_SAFE_R) {
+        hp += (isDay ? 3.2 : 4.5) * dt * (0.7 + fireFuel / 130);
       }
       hp = Math.min(100, hp);
 
@@ -381,7 +544,9 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       damageCd = Math.max(0, damageCd - dt);
 
       const pulse = Math.sin(now * 0.008) * 0.08 + 1;
-      fireLight.intensity = 5.2 * pulse;
+      const fuelMul = 0.45 + (fireFuel / 100) * 0.85;
+      const baseFire = 4.2 * fuelMul * (0.92 + fireFuel / 200);
+      fireLight.intensity = baseFire * pulse * 1.05;
       ember.scale.setScalar(0.85 + Math.sin(now * 0.012) * 0.12);
 
       enemies.forEach((en) => {
@@ -390,24 +555,18 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
         const pz = player.position.z;
         const gx = mesh.position.x;
         const gz = mesh.position.z;
-        const fx = gx;
-        const fz = gz;
-        const toPx = px - gx;
-        const toPz = pz - gz;
-        const distToFire = Math.hypot(fx, fz);
-        let dx = toPx;
-        let dz = toPz;
+        const distToFire = Math.hypot(gx, gz);
+        let dx = px - gx;
+        let dz = pz - gz;
         const dist = Math.hypot(dx, dz) || 1;
         dx /= dist;
         dz /= dist;
 
         let sp = speed;
         if (distToFire < FIRE_SAFE_R + 2.5) {
-          const awayX = gx;
-          const awayZ = gz;
-          const al = Math.hypot(awayX, awayZ) || 1;
-          dx = awayX / al;
-          dz = awayZ / al;
+          const al = Math.hypot(gx, gz) || 1;
+          dx = gx / al;
+          dz = gz / al;
           sp *= 0.85;
         }
 
@@ -417,13 +576,15 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
         mesh.lookAt(lookTarget);
 
         const hit = Math.hypot(mesh.position.x - px, mesh.position.z - pz);
-        if (hit < 1.25 && damageCd <= 0) {
-          hp -= 22;
-          damageCd = 0.65;
+        if (hit < 1.35 && damageCd <= 0) {
+          hp -= en.kind === 'animal' ? 18 : 20;
+          damageCd = 0.62;
         }
       });
 
-      scene.fog.density = 0.012 + (1 - nightLeft / NIGHT_SEC) * 0.012;
+      const phaseLen = isDay ? DAY_SEC : NIGHT_SEC;
+      const fogNightBoost = isDay ? 0 : (1 - phaseLeft / phaseLen) * 0.012;
+      scene.fog.density = (isDay ? 0.006 : 0.012) + fogNightBoost;
 
       renderer.render(scene, camera);
       pushHud();

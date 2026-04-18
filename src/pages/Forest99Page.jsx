@@ -12,12 +12,18 @@ export default function Forest99Page() {
   const [session, setSession] = useState(0);
   const [end, setEnd] = useState(null);
   const [hud, setHud] = useState({
-    night: 1,
+    isDay: true,
+    survivedNights: 0,
     nightGoal: 99,
-    nightLeft: 22,
+    phaseLeft: 32,
+    phaseLen: 32,
     hp: 100,
     nearFire: false,
     cold: false,
+    wood: 0,
+    fireFuel: 72,
+    canChop: true,
+    canFeedFire: false,
   });
 
   const handleHud = useCallback((next) => setHud(next), []);
@@ -28,20 +34,34 @@ export default function Forest99Page() {
     setSession((k) => k + 1);
   };
 
+  const phaseLabel = hud.isDay ? 'Diena' : 'Nakts';
+  const phaseHint = hud.isDay ? ' līdz vakaram' : ' līdz ausmai';
+
   return (
     <div className="app page-forest99">
       <Forest99Game key={session} onHudUpdate={handleHud} onGameEnd={handleEnd} />
 
       <div className="forest99-hud" aria-live="polite">
         <div className="forest99-hud__block">
-          <span className="forest99-hud__label">Nakts</span>
+          <span className="forest99-hud__label">{phaseLabel}</span>
+          <span className="forest99-hud__value">{formatTime(hud.phaseLeft)}</span>
+          <span className="forest99-hud__sub">{phaseHint}</span>
+        </div>
+        <div className="forest99-hud__block">
+          <span className="forest99-hud__label">Pārvarētas naktis</span>
           <span className="forest99-hud__value">
-            {hud.night} / {hud.nightGoal}
+            {hud.survivedNights} / {hud.nightGoal}
           </span>
         </div>
         <div className="forest99-hud__block">
-          <span className="forest99-hud__label">Līdz ausmai</span>
-          <span className="forest99-hud__value">{formatTime(hud.nightLeft)}</span>
+          <span className="forest99-hud__label">Malka</span>
+          <span className="forest99-hud__value">{hud.wood}</span>
+        </div>
+        <div className="forest99-hud__block">
+          <span className="forest99-hud__label">Ugunskurs</span>
+          <div className="forest99-hud__bar forest99-hud__bar--fire" role="meter" aria-valuenow={hud.fireFuel} aria-valuemin={0} aria-valuemax={100}>
+            <div className="forest99-hud__bar-fill forest99-hud__bar-fill--fire" style={{ width: `${hud.fireFuel}%` }} />
+          </div>
         </div>
         <div className="forest99-hud__block forest99-hud__block--wide">
           <span className="forest99-hud__label">Veselība</span>
@@ -51,13 +71,18 @@ export default function Forest99Page() {
         </div>
         {(hud.cold || hud.nearFire) && (
           <p className="forest99-hud__hint">
-            {hud.nearFire ? 'Ugunskura siltums…' : 'Tālu no ugunskura — zemā temperatūra!'}
+            {hud.nearFire ? 'Ugunskura siltums…' : 'Tālu no ugunskura — zemā temperatūra (tikai dienā)!'}
+          </p>
+        )}
+        {hud.canFeedFire && (
+          <p className="forest99-hud__hint forest99-hud__hint--action">
+            F — iemest malku ugunī
           </p>
         )}
       </div>
 
       <p className="forest99-help">
-        WASD — kustība · Shift — skriet · Peles skats · Ķer peles bloķējumu uz spēles · Esc — atbrīvot peli
+        WASD — kustība · Shift — skriet · E — cirst koku · F — malku ugunskurā · Peles skats · Esc — atbrīvot peli · Ēnas tikai dienā; zvēri arī naktī
       </p>
 
       {end === 'win' && (
@@ -75,8 +100,8 @@ export default function Forest99Page() {
       {end === 'lose' && (
         <div className="forest99-modal" role="dialog" aria-labelledby="forest99-lose-title">
           <div className="forest99-modal__card forest99-modal__card--lose">
-            <h2 id="forest99-lose-title">Nakts uzvarēja.</h2>
-            <p>Mēģini palikt tuvāk ugunskuram un izvairīties no ēnām.</p>
+            <h2 id="forest99-lose-title">Gājiens beidzies.</h2>
+            <p>Lieto ugunskuru, cirp kokus un izvairies no zvēriem un dienas ēnām.</p>
             <button type="button" className="forest99-modal__btn" onClick={restart}>
               Mēģināt atkārtoti
             </button>
