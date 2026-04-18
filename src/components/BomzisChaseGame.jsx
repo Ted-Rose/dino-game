@@ -1,5 +1,12 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import {
+  BOMZISCHASE_HACK_CHANGED,
+  BOMZISCHASE_HACK_EVENT,
+  HACK_INVULN_SEC,
+  loadHacks,
+  saveHacks,
+} from '../data/bomzischaseHacks';
 
 const RUN_SPEED = 15;
 const GRAVITY = 42;
@@ -26,6 +33,10 @@ const STUMBLE_SLOW = 0.22;
 
 export const BOMZISCHASE_JUMP_EVENT = 'bomzischase:jump';
 export const BOMZISCHASE_BRAKE_EVENT = 'bomzischase:brake';
+export {
+  BOMZISCHASE_HACK_CHANGED,
+  BOMZISCHASE_HACK_EVENT,
+} from '../data/bomzischaseHacks';
 
 /** Roblox-style blocky avatar (R6-ish): head, torso, arms, legs — feet at y=0 */
 function makeRobloxPlayerMesh(skinDef) {
@@ -357,6 +368,8 @@ export default function BomzisChaseGame({
     let score = 0;
     let runAnimT = 0;
     let wantJump = false;
+    let wantHack = false;
+    let hackInvuln = 0;
 
     bomzi.position.set(0, 0, pz - CHASE_SAFE);
 
@@ -378,6 +391,10 @@ export default function BomzisChaseGame({
         keys.brake = true;
         e.preventDefault();
       }
+      if (e.code === 'KeyH') {
+        wantHack = true;
+        e.preventDefault();
+      }
     };
     const onKu = (e) => {
       if (e.code === 'ArrowDown' || e.code === 'KeyS') {
@@ -394,11 +411,15 @@ export default function BomzisChaseGame({
     const onBrakeEvent = (e) => {
       keys.brake = Boolean(e.detail?.down);
     };
+    const onHackEvent = () => {
+      wantHack = true;
+    };
     window.addEventListener('keydown', onKd);
     window.addEventListener('keyup', onKu);
     wrap.addEventListener('pointerdown', onPointerJump, { passive: false });
     window.addEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
     window.addEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
+    window.addEventListener(BOMZISCHASE_HACK_EVENT, onHackEvent);
     let raf = 0;
 
     function loop() {
@@ -407,6 +428,19 @@ export default function BomzisChaseGame({
       const spd = RUN_SPEED * (stumble > 0 ? STUMBLE_SLOW : 1);
       const brakeHeld = keys.brake;
       const forwardSpd = brakeHeld ? 0 : spd;
+
+      if (wantHack) {
+        wantHack = false;
+        const h = loadHacks();
+        if (h > 0 && hackInvuln <= 1e-6) {
+          saveHacks(h - 1);
+          hackInvuln = HACK_INVULN_SEC;
+          stumble = 0;
+          bomzi.position.z -= 12;
+          window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_CHANGED));
+        }
+      }
+      const immune = hackInvuln > 0;
 
       stumble = Math.max(0, stumble - dt);
 
@@ -542,9 +576,9 @@ export default function BomzisChaseGame({
           }
         }
         if (playerBox.intersectsBox(box)) {
-          let ok = false;
-          if (o.typ === 'low' && py > 1.02) ok = true;
-          if (o.typ === 'laser' && py > 1.38) ok = true;
+          let ok = immune;
+          if (!ok && o.typ === 'low' && py > 1.02) ok = true;
+          if (!ok && o.typ === 'laser' && py > 1.38) ok = true;
           if (!ok) {
             if (o.typ === 'laser') {
               if (!ended) {
@@ -586,7 +620,7 @@ export default function BomzisChaseGame({
         if (playerBox.intersectsBox(new THREE.Box3().setFromObject(ud.head)))
           bomziConnected = true;
       }
-      if (bomziConnected) {
+      if (bomziConnected && !immune) {
         if (!ended) {
           ended = true;
           endCb.current?.({
@@ -612,13 +646,17 @@ export default function BomzisChaseGame({
 
       const distCatch = pz - bomzi.position.z;
 
+      hackInvuln = Math.max(0, hackInvuln - dt);
+
       hudCb.current?.({
         score: Math.floor(score),
         gap: Math.max(0, Math.round(distCatch * 10) / 10),
         braking: brakeHeld,
+        hacks: loadHacks(),
+        hackInvuln,
       });
 
-      if (distCatch < CATCH_DIST) {
+      if (!immune && distCatch < CATCH_DIST) {
         if (!ended) {
           ended = true;
           endCb.current?.({
@@ -648,6 +686,7 @@ export default function BomzisChaseGame({
       });
       window.removeEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
       window.removeEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
+      window.removeEventListener(BOMZISCHASE_HACK_EVENT, onHackEvent);
       renderer.dispose();
       if (renderer.domElement.parentNode === wrap) {
         wrap.removeChild(renderer.domElement);

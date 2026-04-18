@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import BomzisChaseGame, {
   BOMZISCHASE_BRAKE_EVENT,
+  BOMZISCHASE_HACK_EVENT,
   BOMZISCHASE_JUMP_EVENT,
 } from '../components/BomzisChaseGame';
+import {
+  BOMZISCHASE_HACK_CHANGED,
+  HACK_PACK_AMOUNT,
+  HACK_PACK_PRICE,
+  loadHacks,
+  saveHacks,
+} from '../data/bomzischaseHacks';
 import {
   CUSTOM_SKIN_ID,
   SKINS,
@@ -35,11 +43,16 @@ export default function BomzisChasePage() {
     score: 0,
     gap: 11,
     braking: false,
+    hacks: 0,
+    hackInvuln: 0,
   });
   const [gameOver, setGameOver] = useState(null);
   const [touchUi, setTouchUi] = useState(false);
   const [wallet, setWallet] = useState(() =>
     typeof window !== 'undefined' ? loadWallet() : 0,
+  );
+  const [hacks, setHacks] = useState(() =>
+    typeof window !== 'undefined' ? loadHacks() : 0,
   );
   const [owned, setOwned] = useState(initOwnedIds);
   const [equipped, setEquipped] = useState(() =>
@@ -82,6 +95,12 @@ export default function BomzisChasePage() {
   }, []);
 
   useEffect(() => {
+    const sync = () => setHacks(loadHacks());
+    window.addEventListener(BOMZISCHASE_HACK_CHANGED, sync);
+    return () => window.removeEventListener(BOMZISCHASE_HACK_CHANGED, sync);
+  }, []);
+
+  useEffect(() => {
     const m = document.querySelector('meta[name="viewport"]');
     if (!m) return undefined;
     const prev = m.getAttribute('content');
@@ -111,6 +130,20 @@ export default function BomzisChasePage() {
       new CustomEvent(BOMZISCHASE_BRAKE_EVENT, { detail: { down: false } }),
     );
   }, []);
+
+  const fireHack = useCallback(() => {
+    window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_EVENT));
+  }, []);
+
+  const buyHackPack = useCallback(() => {
+    if (wallet < HACK_PACK_PRICE) return;
+    const nextW = wallet - HACK_PACK_PRICE;
+    const nextH = hacks + HACK_PACK_AMOUNT;
+    saveWallet(nextW);
+    saveHacks(nextH);
+    setWallet(nextW);
+    setHacks(nextH);
+  }, [wallet, hacks]);
 
   const buySkin = useCallback(
     (id) => {
@@ -145,9 +178,9 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>.           Skrējienā krāj <strong>naudiņas</strong>; bodē vari nopirkt gatavus izskatus vai{' '}
-          <strong>uzlikt savas krāsas</strong>. Platāks skats rāda bomzi ar nūju; vari
-          apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
+          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>.           Skrējienā krāj <strong>naudiņas</strong>; bodē vari nopirkt gatavus izskatus,{' '}
+          <strong>hakus</strong> vai <strong>uzlikt savas krāsas</strong>. Platāks skats
+          rāda bomzi ar nūju; vari apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
         </p>
       </div>
 
@@ -231,6 +264,19 @@ export default function BomzisChasePage() {
           Maciņā: <strong>{wallet}</strong> naudiņas · uzvelc izskatu — spēle ar jaunu avatāru
           atsāksies
         </p>
+        <div className="bomzischase-hack-pack">
+          <button
+            type="button"
+            className="bomzischase-hack-pack__btn"
+            disabled={wallet < HACK_PACK_PRICE}
+            onClick={buyHackPack}
+          >
+            Pirkt 10 haku ({HACK_PACK_PRICE} naudiņas)
+          </button>
+          <span className="bomzischase-hack-pack__meta">
+            Tavi haki: <strong>{hacks}</strong>
+          </span>
+        </div>
         <ul className="bomzischase-shop__grid">
           {SKINS.map((s) => {
             const has = owned.includes(s.id);
@@ -317,6 +363,17 @@ export default function BomzisChasePage() {
               >
                 Lēkt
               </button>
+              <button
+                type="button"
+                className="bomzischase-hack-btn"
+                aria-label="Haks — īslaicīga aizsardzība"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  fireHack();
+                }}
+              >
+                Haks
+              </button>
             </div>
           )}
         </div>
@@ -331,6 +388,15 @@ export default function BomzisChasePage() {
             Līdz bomzim ~<strong>{hud.gap}</strong> m — viņš cenšas tevi nosist
             {hud.braking && (
               <span className="bomzischase-braking-tag"> · stāvi</span>
+            )}
+          </span>
+          <span>
+            Haki: <strong>{hud.hacks ?? hacks}</strong>
+            {(hud.hackInvuln ?? 0) > 0 && (
+              <span className="bomzischase-hack-active">
+                {' '}
+                · haks ~{(hud.hackInvuln ?? 0).toFixed(1)} s
+              </span>
             )}
           </span>
           {gameOver && (
@@ -365,19 +431,20 @@ export default function BomzisChasePage() {
           {touchUi ? (
             <>
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
-              «<span className="bomzischase-help-strong">Lēkt</span>» — leciens. Zemie
-              klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span>{' '}
-              vai <span className="bomzischase-help-strong">bomzis tevi nosist</span> —
-              no jauna. Naudiņas krāj maciņā; bodē vai savs avatars.
+              «<span className="bomzischase-help-strong">Lēkt</span>» — leciens,
+              «<span className="bomzischase-help-strong">Haks</span>» — īsa aizsardzība (ja
+              ir haki). Zemie klucīši — trieciens;{' '}
+              <span className="bomzischase-help-strong">lāzers</span> vai{' '}
+              <span className="bomzischase-help-strong">bomzis tevi nosist</span> — no jauna.
+              Naudiņas krāj maciņā; bodē vari pirkt hakus vai savu avatāru.
             </>
           ) : (
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
-              apstāties (bomzis tuvojas, lai tevi nosistu). Zemie klucīši — trieciens;{' '}
-              <span className="bomzischase-help-strong">lāzers</span> vai{' '}
-              <span className="bomzischase-help-strong">bomzis tevi nosist</span> —
-              spēle no jauna. Skrējiena punkti kļūst par naudiņām bodē; augšā saliec savas
-              krāsas.
+              apstāties · <kbd>H</kbd> — haks (īslaicīga aizsardzība, ja ir krājumā). Zemie
+              klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span> vai{' '}
+              <span className="bomzischase-help-strong">bomzis tevi nosist</span> — spēle no
+              jauna. Skrējiena punkti kļūst par naudiņām bodē; vari pirkt 10 haku komplektu.
             </>
           )}
         </p>
