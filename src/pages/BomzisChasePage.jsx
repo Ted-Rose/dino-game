@@ -15,7 +15,8 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          3D bezgalīgs skrējiens — šķēršļi nebeidzas, bomzis ar koku dzenas pakaļ
+          Klucīšu skrējējs kā Robloxā — lec pār šķēršļiem, kamēr bomzis ar koku dzenas
+          pakaļ
         </p>
       </div>
 
@@ -45,9 +46,10 @@ export default function BomzisChasePage() {
 
       <section className="bomzischase-help">
         <p>
-          <kbd>A</kbd> / <kbd>D</kbd> vai <kbd>←</kbd> <kbd>→</kbd> — josla ·{' '}
-          <kbd>Space</kbd> — lēkt pār zemiem klucīšiem · augstās sienas — jāapbrauc
-          citā joslā. Pret triecienu bomzis pietuvojas — neļauj viņam klāt!
+          <kbd>A</kbd> / <kbd>D</kbd> vai <kbd>←</kbd> <kbd>→</kbd> — mainīt joslu ·{' '}
+          <kbd>Space</kbd> vai <kbd>↑</kbd> — lēkt pār zemajiem šķēršļiem · augstās
+          sienas — apiet citā joslā. Pret triecienu bomzis pietuvojas — neļauj viņam
+          klāt!
         </p>
       </section>
     </div>

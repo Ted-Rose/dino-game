@@ -10,16 +10,85 @@ const CATCH_DIST = 2.2;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
 
-function makePlayerMesh() {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.42, 0.85, 6, 12),
-    new THREE.MeshStandardMaterial({ color: 0x4a7ecb, roughness: 0.55 }),
+/** Roblox-style blocky avatar (R6-ish): head, torso, arms, legs — feet at y=0 */
+function makeRobloxPlayerMesh() {
+  const skin = new THREE.MeshStandardMaterial({ color: 0xf5c89a, roughness: 0.6 });
+  const shirt = new THREE.MeshStandardMaterial({ color: 0x1e6ef2, roughness: 0.5 });
+  const pants = new THREE.MeshStandardMaterial({ color: 0x243a52, roughness: 0.65 });
+
+  const root = new THREE.Group();
+
+  const hipY = 0.54;
+  const legH = 0.52;
+  const legW = 0.2;
+  const legD = 0.22;
+
+  function legMesh(mat) {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(legW, legH, legD),
+      mat,
+    );
+    m.castShadow = true;
+    m.position.set(0, -legH * 0.48, 0);
+    return m;
+  }
+
+  const legL = new THREE.Group();
+  legL.position.set(-0.14, hipY, 0);
+  legL.add(legMesh(pants));
+  root.add(legL);
+
+  const legR = new THREE.Group();
+  legR.position.set(0.14, hipY, 0);
+  legR.add(legMesh(pants));
+  root.add(legR);
+
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.58, 0.48, 0.32),
+    shirt,
   );
-  body.castShadow = true;
-  body.position.y = 0.85;
-  g.add(body);
-  return g;
+  torso.castShadow = true;
+  torso.position.set(0, 0.98, 0);
+  root.add(torso);
+
+  const armL = new THREE.Group();
+  armL.position.set(-0.38, 1.12, 0);
+  const armMeshL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.5, 0.18),
+    skin,
+  );
+  armMeshL.castShadow = true;
+  armMeshL.position.set(0, -0.24, 0);
+  armL.add(armMeshL);
+  root.add(armL);
+
+  const armR = new THREE.Group();
+  armR.position.set(0.38, 1.12, 0);
+  const armMeshR = armMeshL.clone();
+  armMeshR.material = skin;
+  armMeshR.castShadow = true;
+  armR.add(armMeshR);
+  root.add(armR);
+
+  const head = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.4, 0.38),
+    skin,
+  );
+  head.castShadow = true;
+  head.position.set(0, 1.42, 0);
+  root.add(head);
+
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.35 });
+  for (const ox of [-0.09, 0.09]) {
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.03), eyeMat);
+    eye.castShadow = true;
+    eye.position.set(ox, 1.44, 0.19);
+    root.add(eye);
+  }
+
+  root.rotation.y = Math.PI;
+  root.userData.rig = { legL, legR, armL, armR, torso, head };
+  return root;
 }
 
 function makeBomziMesh() {
@@ -72,7 +141,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     scene.fog = new THREE.Fog(0xb8c4d8, 28, 130);
 
     const camera = new THREE.PerspectiveCamera(62, 1, 0.2, 200);
-    camera.position.set(0, 5.2, 11);
+    camera.position.set(0, 4.35, 13.5);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -129,7 +198,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     stripes.position.z = 120;
     scene.add(stripes);
 
-    const player = makePlayerMesh();
+    const player = makeRobloxPlayerMesh();
     scene.add(player);
 
     const bomzi = makeBomziMesh();
@@ -140,21 +209,24 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     function spawnObstacle(aheadZ) {
       const lane = Math.floor(Math.random() * 3);
       const x = LANES[lane];
-      const typ = Math.random() < 0.55 ? 'low' : 'wall';
+      const typ = Math.random() < 0.72 ? 'low' : 'wall';
 
       let mesh;
       if (typ === 'low') {
         mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(2.4, 0.65, 1.1),
-          new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.8 }),
+          new THREE.BoxGeometry(2.35, 0.62, 1.05),
+          new THREE.MeshStandardMaterial({
+            color: Math.random() < 0.5 ? 0xc49a62 : 0xb87a48,
+            roughness: 0.78,
+          }),
         );
-        mesh.position.set(x, 0.325, aheadZ);
+        mesh.position.set(x, 0.31, aheadZ);
       } else {
         mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(2.6, 2.4, 1),
+          new THREE.BoxGeometry(2.6, 2.35, 1),
           new THREE.MeshStandardMaterial({ color: 0x6d5a4a, roughness: 0.78 }),
         );
-        mesh.position.set(x, 1.2, aheadZ);
+        mesh.position.set(x, 1.175, aheadZ);
       }
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -177,6 +249,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     let vy = 0;
     let stumble = 0;
     let score = 0;
+    let runAnimT = 0;
 
     bomzi.position.set(px * 0.6, 0, pz - CHASE_SAFE);
 
@@ -230,6 +303,34 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
       player.position.set(px, py, pz);
 
+      runAnimT += dt * spd * 0.38;
+      const rig = player.userData.rig;
+      if (rig) {
+        const inAir = py > 0.06 || vy > 0.35;
+        const stride = stumble > 0 ? 0.22 : inAir ? 0.18 : 0.58;
+        const ph = runAnimT * 13;
+        const s = Math.sin(ph);
+        rig.legL.rotation.x = s * stride;
+        rig.legR.rotation.x = -s * stride;
+        rig.armL.rotation.x = -s * stride * 0.82;
+        rig.armR.rotation.x = s * stride * 0.82;
+        if (inAir) {
+          rig.armL.rotation.z = 0.42;
+          rig.armR.rotation.z = -0.42;
+          rig.armL.rotation.x -= 0.55;
+          rig.armR.rotation.x -= 0.55;
+        } else {
+          rig.armL.rotation.z = 0;
+          rig.armR.rotation.z = 0;
+        }
+        player.rotation.z =
+          stumble > 0 ? Math.sin(stumble * 24) * 0.14 : THREE.MathUtils.lerp(
+              player.rotation.z,
+              0,
+              Math.min(1, 12 * dt),
+            );
+      }
+
       const targetGap = stumble > 0 ? 4 : CHASE_SAFE;
       const targetBz = pz - targetGap;
       bomzi.position.z = THREE.MathUtils.lerp(
@@ -245,10 +346,10 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       bomzi.position.y = 0;
       bomzi.lookAt(px, py + 0.9, pz + 2);
 
-      camera.position.x += (px * 0.65 - camera.position.x) * 6 * dt;
-      camera.position.z = pz + 10;
-      camera.position.y = 5.2 + py * 0.25;
-      camera.lookAt(px, py + 1.2, pz + 18);
+      camera.position.x += (px * 0.75 - camera.position.x) * 6 * dt;
+      camera.position.z = pz + 9.5;
+      camera.position.y = 4.35 + py * 0.32;
+      camera.lookAt(px, py + 1.05, pz + 22);
 
       player.updateMatrixWorld(true);
       const playerBox = new THREE.Box3().setFromObject(player);
@@ -264,7 +365,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
         const box = new THREE.Box3().setFromObject(o.mesh);
         if (playerBox.intersectsBox(box)) {
           let ok = false;
-          if (o.typ === 'low' && py > 0.82) ok = true;
+          if (o.typ === 'low' && py > 0.88) ok = true;
           if (o.typ === 'wall' && Math.abs(px - o.x) > 1.38) ok = true;
           if (!ok) stumble = STUMBLE_TIME;
         }
