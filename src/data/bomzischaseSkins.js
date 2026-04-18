@@ -3,6 +3,16 @@
 export const STORAGE_WALLET = 'bomzischase-wallet';
 export const STORAGE_OWNED = 'bomzischase-owned';
 export const STORAGE_EQUIP = 'bomzischase-equipped';
+export const STORAGE_CUSTOM_APPEARANCE = 'bomzischase-custom-appearance';
+
+/** Brīvi krāsotas kombinācijas ID (nav bodē kā atsevišķa karte) */
+export const CUSTOM_SKIN_ID = 'custom';
+
+const DEFAULT_CUSTOM = {
+  shirt: 0x1e6ef2,
+  pants: 0x243a52,
+  skin: 0xf5c89a,
+};
 
 /** @typedef {{ id: string, name: string, price: number, shirt: number, pants: number, skin: number }} BomziSkin */
 
@@ -92,6 +102,7 @@ export function saveOwned(ids) {
 export function loadEquipped() {
   try {
     const id = localStorage.getItem(STORAGE_EQUIP) || 'classic';
+    if (id === CUSTOM_SKIN_ID) return CUSTOM_SKIN_ID;
     return getSkin(id).id;
   } catch {
     return 'classic';
@@ -99,5 +110,56 @@ export function loadEquipped() {
 }
 
 export function saveEquipped(id) {
-  localStorage.setItem(STORAGE_EQUIP, getSkin(id).id);
+  localStorage.setItem(
+    STORAGE_EQUIP,
+    id === CUSTOM_SKIN_ID ? CUSTOM_SKIN_ID : getSkin(id).id,
+  );
+}
+
+export function clampHexColor(n) {
+  const x = typeof n === 'number' ? n : parseInt(String(n).replace('#', ''), 16);
+  if (!Number.isFinite(x)) return 0x808080;
+  return Math.min(0xffffff, Math.max(0, Math.floor(x)));
+}
+
+export function loadCustomAppearance() {
+  try {
+    const raw = localStorage.getItem(STORAGE_CUSTOM_APPEARANCE);
+    if (!raw) return { ...DEFAULT_CUSTOM };
+    const j = JSON.parse(raw);
+    return {
+      shirt: clampHexColor(j.shirt),
+      pants: clampHexColor(j.pants),
+      skin: clampHexColor(j.skin),
+    };
+  } catch {
+    return { ...DEFAULT_CUSTOM };
+  }
+}
+
+export function saveCustomAppearance(colors) {
+  localStorage.setItem(
+    STORAGE_CUSTOM_APPEARANCE,
+    JSON.stringify({
+      shirt: clampHexColor(colors.shirt),
+      pants: clampHexColor(colors.pants),
+      skin: clampHexColor(colors.skin),
+    }),
+  );
+}
+
+/** Pilns izskats spēlei (bodīša presets vai savās krāsās). */
+export function resolveAppearance(equippedId, customCols) {
+  if (equippedId === CUSTOM_SKIN_ID) {
+    const c = customCols ?? loadCustomAppearance();
+    return {
+      id: CUSTOM_SKIN_ID,
+      name: 'Mana krāsa',
+      price: 0,
+      shirt: c.shirt,
+      pants: c.pants,
+      skin: c.skin,
+    };
+  }
+  return getSkin(equippedId);
 }

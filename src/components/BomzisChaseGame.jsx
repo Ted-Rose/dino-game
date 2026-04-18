@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { getSkin } from '../data/bomzischaseSkins';
 
 const RUN_SPEED = 15;
 /** Ik pēc tik «naudiņu» (skriešanas punktiem) pieaug kopējais ātrums */
@@ -170,10 +169,17 @@ function makeBomziMesh() {
   return g;
 }
 
+const DEFAULT_APPEARANCE = Object.freeze({
+  id: 'classic',
+  shirt: 0x1e6ef2,
+  pants: 0x243a52,
+  skin: 0xf5c89a,
+});
+
 export default function BomzisChaseGame({
   onHud,
   onGameOver,
-  skinId = 'classic',
+  appearance = DEFAULT_APPEARANCE,
 }) {
   const wrapRef = useRef(null);
   const hudCb = useRef(onHud);
@@ -257,7 +263,12 @@ export default function BomzisChaseGame({
     stripes.position.z = 120;
     scene.add(stripes);
 
-    const player = makeRobloxPlayerMesh(getSkin(skinId));
+    const skinDef = {
+      shirt: appearance.shirt ?? DEFAULT_APPEARANCE.shirt,
+      pants: appearance.pants ?? DEFAULT_APPEARANCE.pants,
+      skin: appearance.skin ?? DEFAULT_APPEARANCE.skin,
+    };
+    const player = makeRobloxPlayerMesh(skinDef);
     scene.add(player);
 
     const bomzi = makeBomziMesh();
@@ -668,7 +679,7 @@ export default function BomzisChaseGame({
       stripeGeo.dispose();
       stripeMat.dispose();
     };
-  }, [skinId]);
+  }, [appearance.shirt, appearance.pants, appearance.skin]);
 
   return <div className="bomzischase-canvas-wrap" ref={wrapRef} />;
 }

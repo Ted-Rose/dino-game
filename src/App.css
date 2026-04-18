@@ -670,6 +670,106 @@
   }
 }
 
+.bomzischase-builder {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto 18px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px dashed #aac;
+  background: linear-gradient(180deg, #fdfefe 0%, #f4f8fc 100%);
+  box-sizing: border-box;
+}
+
+.bomzischase-builder__title {
+  margin: 0 0 8px;
+  font-size: clamp(18px, 2.5vw, 22px);
+  color: #3d4a5c;
+}
+
+.bomzischase-builder__hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.45;
+}
+
+.bomzischase-builder__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.bomzischase-builder__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #445;
+}
+
+.bomzischase-builder__color {
+  width: 100%;
+  min-width: 140px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bomzischase-builder__preview {
+  display: flex;
+  gap: 6px;
+  height: 44px;
+  margin-bottom: 14px;
+}
+
+.bomzischase-builder__preview span {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.bomzischase-builder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bomzischase-builder__apply {
+  padding: 11px 18px;
+  border-radius: 10px;
+  border: 2px solid #535353;
+  background: #535353;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.bomzischase-builder__apply:hover {
+  background: #3d3d3d;
+}
+
+.bomzischase-builder__equip-only {
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1px solid #aab;
+  background: #fff;
+  color: #334;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.bomzischase-builder__equip-only:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .bomzischase-shop {
   width: 100%;
   max-width: 880px;

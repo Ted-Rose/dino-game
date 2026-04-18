@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import BomzisChaseGame, {
   BOMZISCHASE_BRAKE_EVENT,
   BOMZISCHASE_JUMP_EVENT,
 } from '../components/BomzisChaseGame';
 import {
+  CUSTOM_SKIN_ID,
   SKINS,
   getSkin,
+  loadCustomAppearance,
   loadEquipped,
   loadOwned,
   loadWallet,
+  resolveAppearance,
+  saveCustomAppearance,
   saveEquipped,
   saveOwned,
   saveWallet,
@@ -16,6 +20,14 @@ import {
 
 function hexCss(n) {
   return `#${n.toString(16).padStart(6, '0')}`;
+}
+
+function initOwnedIds() {
+  if (typeof window === 'undefined') return ['classic', CUSTOM_SKIN_ID];
+  const o = loadOwned();
+  const merged = [...new Set([...o, 'classic', CUSTOM_SKIN_ID])];
+  if (merged.length !== o.length) saveOwned(merged);
+  return merged;
 }
 
 export default function BomzisChasePage() {
@@ -31,11 +43,19 @@ export default function BomzisChasePage() {
   const [wallet, setWallet] = useState(() =>
     typeof window !== 'undefined' ? loadWallet() : 0,
   );
-  const [owned, setOwned] = useState(() =>
-    typeof window !== 'undefined' ? loadOwned() : ['classic'],
-  );
+  const [owned, setOwned] = useState(initOwnedIds);
   const [equipped, setEquipped] = useState(() =>
     typeof window !== 'undefined' ? loadEquipped() : 'classic',
+  );
+  const [customAppearance, setCustomAppearance] = useState(() =>
+    typeof window !== 'undefined'
+      ? loadCustomAppearance()
+      : { shirt: 0x1e6ef2, pants: 0x243a52, skin: 0xf5c89a },
+  );
+
+  const appearance = useMemo(
+    () => resolveAppearance(equipped, customAppearance),
+    [equipped, customAppearance],
   );
 
   const onHud = useCallback((h) => setHud(h), []);
@@ -114,6 +134,12 @@ export default function BomzisChasePage() {
     setEquipped(id);
   }, [owned]);
 
+  const applyCustomAvatar = useCallback(() => {
+    saveCustomAppearance(customAppearance);
+    saveEquipped(CUSTOM_SKIN_ID);
+    setEquipped(CUSTOM_SKIN_ID);
+  }, [customAppearance]);
+
   return (
     <div
       className={`app page-bomzischase${touchUi ? ' page-bomzischase--touch' : ''}`}
@@ -121,11 +147,87 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>.           Skrējienā krāj <strong>naudiņas</strong> — ik pa <strong>10</strong>{' '}
-          skrienot ātrāk; nopērc izskatu bodītē. Platāks skats rāda
-          bomzi ar nūju; vari apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
+          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>. Skrējienā krāj{' '}
+          <strong>naudiņas</strong> — ik pa <strong>10</strong> skrienot ātrāk; bodē vari
+          nopirkt gatavus izskatus vai{' '}
+          <strong>uzlikt savas krāsas</strong>. Platāks skats rāda bomzi ar nūju; vari
+          apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
         </p>
       </div>
+
+      <section className="bomzischase-builder" aria-label="Savs avatars">
+        <h2 className="bomzischase-builder__title">Uzstādi savu avatāru</h2>
+        <p className="bomzischase-builder__hint">
+          Izvēlies trīs krāsas — krekls, bikses, sejas tonis. Saglabā un uzvelc; izmaiņas
+          uzreiz redzamas spēlē.
+        </p>
+        <div className="bomzischase-builder__controls">
+          <label className="bomzischase-builder__label">
+            Krekls
+            <input
+              type="color"
+              className="bomzischase-builder__color"
+              value={hexCss(customAppearance.shirt)}
+              onChange={(e) =>
+                setCustomAppearance((c) => ({
+                  ...c,
+                  shirt: parseInt(e.target.value.slice(1), 16),
+                }))
+              }
+            />
+          </label>
+          <label className="bomzischase-builder__label">
+            Bikses
+            <input
+              type="color"
+              className="bomzischase-builder__color"
+              value={hexCss(customAppearance.pants)}
+              onChange={(e) =>
+                setCustomAppearance((c) => ({
+                  ...c,
+                  pants: parseInt(e.target.value.slice(1), 16),
+                }))
+              }
+            />
+          </label>
+          <label className="bomzischase-builder__label">
+            Āda / seja
+            <input
+              type="color"
+              className="bomzischase-builder__color"
+              value={hexCss(customAppearance.skin)}
+              onChange={(e) =>
+                setCustomAppearance((c) => ({
+                  ...c,
+                  skin: parseInt(e.target.value.slice(1), 16),
+                }))
+              }
+            />
+          </label>
+        </div>
+        <div className="bomzischase-builder__preview" aria-hidden>
+          <span style={{ background: hexCss(customAppearance.shirt) }} />
+          <span style={{ background: hexCss(customAppearance.pants) }} />
+          <span style={{ background: hexCss(customAppearance.skin) }} />
+        </div>
+        <div className="bomzischase-builder__actions">
+          <button
+            type="button"
+            className="bomzischase-builder__apply"
+            onClick={applyCustomAvatar}
+          >
+            Saglabāt un uzvilkt manu avatāru
+          </button>
+          <button
+            type="button"
+            className="bomzischase-builder__equip-only"
+            disabled={equipped === CUSTOM_SKIN_ID}
+            onClick={() => equipSkin(CUSTOM_SKIN_ID)}
+          >
+            {equipped === CUSTOM_SKIN_ID ? 'Jau izvēlēts mans' : 'Uzvilkt saglabāto manu'}
+          </button>
+        </div>
+      </section>
 
       <section className="bomzischase-shop" aria-label="Izskats">
         <h2 className="bomzischase-shop__title">Izskats par naudiņām</h2>
@@ -185,7 +287,7 @@ export default function BomzisChasePage() {
       <div className="bomzischase-stage">
         <div className="bomzischase-playfield">
           <BomzisChaseGame
-            skinId={equipped}
+            appearance={appearance}
             onHud={onHud}
             onGameOver={onGameOver}
           />
@@ -273,7 +375,7 @@ export default function BomzisChasePage() {
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens. Zemie
               klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span>{' '}
               vai <span className="bomzischase-help-strong">bomzis tevi nosist</span> —
-              no jauna. Naudiņas krāj maciņā; bodē iegādājas izskatu.
+              no jauna. Naudiņas krāj maciņā; bodē vai savs avatars.
             </>
           ) : (
             <>
@@ -281,7 +383,8 @@ export default function BomzisChasePage() {
               apstāties (bomzis tuvojas, lai tevi nosistu). Zemie klucīši — trieciens;{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> —
-              spēle no jauna. Skrējiena punkti kļūst par naudiņām bodē.
+              spēle no jauna. Skrējiena punkti kļūst par naudiņām bodē; augšā saliec savas
+              krāsas.
             </>
           )}
         </p>
