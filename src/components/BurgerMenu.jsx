@@ -56,6 +56,17 @@ export default function BurgerMenu({ id, open, onClose }) {
                   99 naktis mežā (3D)
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/bomzis-skrien"
+                  className={({ isActive }) =>
+                    `menu-link${isActive ? ' menu-link--active' : ''}`
+                  }
+                  onClick={handleNav}
+                >
+                  Bomža medības (3D)
+                </NavLink>
+              </li>
             </ul>
           </section>
           <section className="menu-section">
