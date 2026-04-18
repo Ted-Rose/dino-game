@@ -8,23 +8,40 @@ function formatTime(sec) {
   return `${m}:${r.toString().padStart(2, '0')}`;
 }
 
+const defaultHud = {
+  isDay: true,
+  survivedNights: 0,
+  nightGoal: 99,
+  phaseLeft: 32,
+  phaseLen: 32,
+  hp: 100,
+  hunger: 92,
+  stamina: 100,
+  sanity: 100,
+  wood: 2,
+  stone: 1,
+  berries: 2,
+  coins: 5,
+  fireFuel: 84,
+  spearOwned: false,
+  shelterLevel: 0,
+  torchUnlocked: false,
+  canFeedFire: false,
+  canCraftSpear: false,
+  canEat: true,
+  canShelter: false,
+  nearMerchant: false,
+  storyLine: '',
+};
+
 export default function Forest99Page() {
   const [session, setSession] = useState(0);
   const [end, setEnd] = useState(null);
-  const [hud, setHud] = useState({
-    isDay: true,
-    survivedNights: 0,
-    nightGoal: 99,
-    phaseLeft: 32,
-    phaseLen: 32,
-    wood: 0,
-    fireFuel: 72,
-    canChop: true,
-    canFeedFire: false,
-  });
+  const [hud, setHud] = useState(defaultHud);
 
   const handleHud = useCallback((next) => setHud(next), []);
-  const handleEnd = useCallback(() => setEnd('win'), []);
+
+  const handleEnd = useCallback((won) => setEnd(won ? 'win' : 'lose'), []);
 
   const restart = () => {
     setEnd(null);
@@ -32,43 +49,92 @@ export default function Forest99Page() {
   };
 
   const phaseLabel = hud.isDay ? 'Diena' : 'Nakts';
-  const phaseHint = hud.isDay ? ' līdz vakaram' : ' līdz ausmai';
 
   return (
     <div className="app page-forest99">
       <Forest99Game key={session} onHudUpdate={handleHud} onGameEnd={handleEnd} />
 
+      {hud.storyLine && (
+        <div className="forest99-story" role="status">
+          {hud.storyLine}
+        </div>
+      )}
+
       <div className="forest99-hud" aria-live="polite">
         <div className="forest99-hud__block">
           <span className="forest99-hud__label">{phaseLabel}</span>
           <span className="forest99-hud__value">{formatTime(hud.phaseLeft)}</span>
-          <span className="forest99-hud__sub">{phaseHint}</span>
         </div>
         <div className="forest99-hud__block">
-          <span className="forest99-hud__label">Pārvarētas naktis</span>
+          <span className="forest99-hud__label">Naktis</span>
           <span className="forest99-hud__value">
             {hud.survivedNights} / {hud.nightGoal}
           </span>
+          {hud.torchUnlocked && <span className="forest99-hud__sub">Lāpa aktivizēta</span>}
         </div>
         <div className="forest99-hud__block">
-          <span className="forest99-hud__label">Malka</span>
-          <span className="forest99-hud__value">{hud.wood}</span>
+          <span className="forest99-hud__label">Monētas</span>
+          <span className="forest99-hud__value">{hud.coins}</span>
         </div>
-        <div className="forest99-hud__block forest99-hud__block--wide">
-          <span className="forest99-hud__label">Ugunskurs</span>
-          <div className="forest99-hud__bar forest99-hud__bar--fire" role="meter" aria-valuenow={hud.fireFuel} aria-valuemin={0} aria-valuemax={100}>
-            <div className="forest99-hud__bar-fill forest99-hud__bar-fill--fire" style={{ width: `${hud.fireFuel}%` }} />
+
+        <div className="forest99-hud__statgrid">
+          <div className="forest99-hud__block forest99-hud__block--wide">
+            <span className="forest99-hud__label">HP</span>
+            <div className="forest99-hud__bar forest99-hud__bar--hp">
+              <div className="forest99-hud__bar-fill forest99-hud__bar-fill--hp" style={{ width: `${hud.hp}%` }} />
+            </div>
+          </div>
+          <div className="forest99-hud__block forest99-hud__block--wide">
+            <span className="forest99-hud__label">Izsalkums</span>
+            <div className="forest99-hud__bar forest99-hud__bar--hunger">
+              <div className="forest99-hud__bar-fill forest99-hud__bar-fill--hunger" style={{ width: `${hud.hunger}%` }} />
+            </div>
+          </div>
+          <div className="forest99-hud__block forest99-hud__block--wide">
+            <span className="forest99-hud__label">Izturība</span>
+            <div className="forest99-hud__bar forest99-hud__bar--sta">
+              <div className="forest99-hud__bar-fill forest99-hud__bar-fill--sta" style={{ width: `${hud.stamina}%` }} />
+            </div>
+          </div>
+          <div className="forest99-hud__block forest99-hud__block--wide">
+            <span className="forest99-hud__label">Sapratne {!hud.isDay && '(nakts)'}</span>
+            <div className="forest99-hud__bar forest99-hud__bar--san">
+              <div className="forest99-hud__bar-fill forest99-hud__bar-fill--san" style={{ width: `${hud.sanity}%` }} />
+            </div>
           </div>
         </div>
-        {hud.canFeedFire && (
-          <p className="forest99-hud__hint forest99-hud__hint--action">
-            F — iemest malku ugunī
-          </p>
-        )}
+
+        <div className="forest99-hud__inv">
+          <span className="forest99-hud__label">Inventārs</span>
+          <span className="forest99-hud__inv-row">
+            Malka {hud.wood} · Akmens {hud.stone} · Ogas {hud.berries}
+            {hud.spearOwned && <span className="forest99-hud__spear"> · šķēps ✓</span>}
+            {hud.shelterLevel > 0 && <span> · pajumte {hud.shelterLevel}</span>}
+          </span>
+        </div>
+
+        <div className="forest99-hud__block forest99-hud__block--wide">
+          <span className="forest99-hud__label">Ugunskura spēks</span>
+          <div className="forest99-hud__bar forest99-hud__bar--fire">
+            <div className="forest99-hud__bar-fill forest99-hud__bar-fill--fire" style={{ width: `${Math.min(100, hud.fireFuel)}%` }} />
+          </div>
+        </div>
+
+        <div className="forest99-hud__hints">
+          {hud.canFeedFire && <p className="forest99-hud__hint forest99-hud__hint--action">F — malka ugunī</p>}
+          {hud.canCraftSpear && <p className="forest99-hud__hint forest99-hud__hint--action">Q — izgatavot šķēpu (5 malka, 2 akmens)</p>}
+          {hud.canEat && <p className="forest99-hud__hint forest99-hud__hint--action">R — apēst ogas</p>}
+          {hud.canShelter && <p className="forest99-hud__hint forest99-hud__hint--action">H — pajumte (+1, −10 malka)</p>}
+          {hud.nearMerchant && (
+            <p className="forest99-hud__hint forest99-hud__hint--action">
+              Tirgotājs: 1 — ogas (6 monētas) · 2 — malka (10 monētas)
+            </p>
+          )}
+        </div>
       </div>
 
       <p className="forest99-help">
-        WASD — kustība · Shift — skriet · E — cirst koku · F — malku ugunskurā · Peles skats · Esc — atbrīvot peli · Meža zvēri medī, bet neapdraud
+        WASD · Shift skriet · E — lasīt kokus/akmeņus/krūmus · Space uzbrukt · F/Q/R/H · Peles skats · Ēnas naktī
       </p>
 
       {end === 'win' && (
@@ -78,6 +144,18 @@ export default function Forest99Page() {
             <p>Mežs tevi vairs nepieskaras.</p>
             <button type="button" className="forest99-modal__btn" onClick={restart}>
               Spēlēt vēlreiz
+            </button>
+          </div>
+        </div>
+      )}
+
+      {end === 'lose' && (
+        <div className="forest99-modal" role="dialog" aria-labelledby="forest99-lose-title">
+          <div className="forest99-modal__card forest99-modal__card--lose">
+            <h2 id="forest99-lose-title">Gājiens beidzies.</h2>
+            <p>Uzturies pie ugunskura, ēd ogas, improvizē pajumti un cīnies ar radībām.</p>
+            <button type="button" className="forest99-modal__btn" onClick={restart}>
+              No jauna
             </button>
           </div>
         </div>
