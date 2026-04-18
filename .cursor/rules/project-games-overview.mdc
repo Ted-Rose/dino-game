@@ -15,7 +15,7 @@ Ja lietotājs runā par „šo spēli“ bez nosaukuma, **precizē maršrutu / i
 
 | Nosaukums (izvēlnē) | Ceļš | Galvenā lapa | Īsumā |
 |---------------------|------|--------------|--------|
-| **Chrome Bikšu spēle** | `/` | `src/pages/GamePage.jsx` | Dino/Chrome bikšu mini-spēle (sākumlapa). |
+| **Briesmīgais pingvīns** | `/` | `src/pages/GamePage.jsx` | Mini-runner ar pingvīna tēlu (sākumlapa). |
 | **Rūķīša ceļojums** | `/rukitis` | `src/pages/GnomePage.jsx` | Multi-fāžu piedzīvojums; loģika/spēle `src/components/GnomeGame.jsx` un saistītajos komponentos. |
 | **99 naktis mežā (3D)** | `/99-naktis-mezā` | `src/pages/Forest99Page.jsx` | Three.js mežs: `src/components/Forest99Game.jsx`, skārien vadība `Forest99TouchControls.jsx`, audio `Forest99Audio.js`. |
 | **Cita lapa** (nav izvēlnē kā „spēle“, bet satur spēli) | `/cita-lapa` | `src/pages/OtherPage.jsx` | `PipeGame` (`src/components/PipeGame.jsx`) — cauruļu spēle. |

@@ -39,7 +39,7 @@ export default function Layout() {
           </span>
           <span className="visually-hidden">Atvērt izvēlni</span>
         </button>
-        <span className="site-title">Bikšu spēle</span>
+        <span className="site-title">Pingvīna spēle</span>
       </header>
       <BurgerMenu
         id={NAV_PANEL_ID}

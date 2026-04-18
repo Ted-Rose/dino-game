@@ -3,7 +3,7 @@ import DinoGame from '../DinoGame';
 export default function GamePage() {
   return (
     <div className="app page-game">
-      <h1>Chrome Bikšu spēle</h1>
+      <h1>Briesmīgais pingvīns</h1>
       <DinoGame />
       <p className="hint">
         Spied <kbd>Space</kbd> vai <kbd>↑</kbd>, lai lēktu. <kbd>↓</kbd>, lai

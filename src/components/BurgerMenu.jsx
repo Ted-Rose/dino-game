@@ -31,7 +31,7 @@ export default function BurgerMenu({ id, open, onClose }) {
                   }
                   onClick={handleNav}
                 >
-                  Chrome Bikšu spēle
+                  Briesmīgais pingvīns
                 </NavLink>
               </li>
               <li>
