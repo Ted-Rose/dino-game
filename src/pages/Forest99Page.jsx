@@ -178,7 +178,7 @@ export default function Forest99Page() {
       <p className="forest99-help">
         {touchUi
           ? 'Spieķis — kustība · velc labajā pusē — skats · Kr/E/F/Q/R/H/Sk · 1/2 pie tirgotāja'
-          : 'WASD · Shift skriet · E — lasīt · Space uzbrukt · F/Q/R/H · pele · Ēnas naktī'}
+          : 'WASD vai bultiņas · Shift skriet · E — lasīt · Space uzbrukt · F/Q/R/H · pele · Ēnas naktī'}
       </p>
 
       {end === 'win' && (

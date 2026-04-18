@@ -254,8 +254,16 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       return !!(keys[code] || (ti?.enabled && ti.keys?.[code]));
     }
 
+    /** WASD vai atbilstošās bultiņas */
+    function moveKey(wasd, arrow) {
+      return mergeKey(wasd) || mergeKey(arrow);
+    }
+
     const onKeyDown = (e) => {
       keys[e.code] = true;
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+        e.preventDefault();
+      }
       if (e.code === 'Escape' && document.pointerLockElement === renderer.domElement) {
         document.exitPointerLock();
       }
@@ -738,19 +746,19 @@ export default function Forest99Game({ onHudUpdate, onGameEnd, touchInputRef }) 
       let sprint = mergeKey('ShiftLeft') && stamina > 2;
       let mx = 0;
       let mz = 0;
-      if (mergeKey('KeyW')) {
+      if (moveKey('KeyW', 'ArrowUp')) {
         mx += forward.x;
         mz += forward.z;
       }
-      if (mergeKey('KeyS')) {
+      if (moveKey('KeyS', 'ArrowDown')) {
         mx -= forward.x;
         mz -= forward.z;
       }
-      if (mergeKey('KeyA')) {
+      if (moveKey('KeyA', 'ArrowLeft')) {
         mx -= right.x;
         mz -= right.z;
       }
-      if (mergeKey('KeyD')) {
+      if (moveKey('KeyD', 'ArrowRight')) {
         mx += right.x;
         mz += right.z;
       }
