@@ -31,6 +31,146 @@ function formatLivesDisplay(livesBigInt) {
 
 const INVINCIBLE_DURATION = 90;
 
+const WORLD_THEMES = [
+  {
+    label: 'Pļava',
+    sky: '#f7f7f7',
+    obstacle: '#535353',
+    cloud: '#c5c5c5',
+    ground: '#535353',
+    hud: '#535353',
+    blk: '#12121a',
+    blkSide: '#25252f',
+    belly: '#e4eaef',
+    beak: '#e06012',
+    beakDark: '#9a4508',
+    eye: '#c81018',
+    brow: '#2c080c',
+    lifeNotice: '#e74c3c',
+  },
+  {
+    label: 'Rasas mežs',
+    sky: '#e5f4ec',
+    obstacle: '#2d5a47',
+    cloud: '#a4d4bb',
+    ground: '#2d5a47',
+    hud: '#2d5a47',
+    blk: '#0e1f18',
+    blkSide: '#1c3d2f',
+    belly: '#d8f0e4',
+    beak: '#c86820',
+    beakDark: '#8a4610',
+    eye: '#b01020',
+    brow: '#3a1510',
+    lifeNotice: '#c0392b',
+  },
+  {
+    label: 'Saulriets',
+    sky: '#fde8dc',
+    obstacle: '#7a4a68',
+    cloud: '#f0b8a8',
+    ground: '#6a4055',
+    hud: '#5a3548',
+    blk: '#1a1218',
+    blkSide: '#352030',
+    belly: '#ffeef5',
+    beak: '#e86818',
+    beakDark: '#a04008',
+    eye: '#d02038',
+    brow: '#401018',
+    lifeNotice: '#e74c3c',
+  },
+  {
+    label: 'Tuksnesis',
+    sky: '#f4ecd8',
+    obstacle: '#8a6a40',
+    cloud: '#dcc8a0',
+    ground: '#7a5a38',
+    hud: '#6a5030',
+    blk: '#1c1810',
+    blkSide: '#3d3420',
+    belly: '#f5ecd8',
+    beak: '#d07810',
+    beakDark: '#905008',
+    eye: '#c01818',
+    brow: '#382010',
+    lifeNotice: '#c0392b',
+  },
+  {
+    label: 'Ledus',
+    sky: '#e8f2fc',
+    obstacle: '#4a6888',
+    cloud: '#b8d4f0',
+    ground: '#456890',
+    hud: '#3d5a78',
+    blk: '#101820',
+    blkSide: '#243848',
+    belly: '#eef6ff',
+    beak: '#d07018',
+    beakDark: '#884810',
+    eye: '#c01828',
+    brow: '#281818',
+    lifeNotice: '#e74c3c',
+  },
+  {
+    label: 'Magone',
+    sky: '#f2e8fc',
+    obstacle: '#684878',
+    cloud: '#d8c0ec',
+    ground: '#584068',
+    hud: '#503860',
+    blk: '#181020',
+    blkSide: '#302040',
+    belly: '#f8ecfc',
+    beak: '#e05018',
+    beakDark: '#983010',
+    eye: '#d01040',
+    brow: '#301020',
+    lifeNotice: '#e91e63',
+  },
+  {
+    label: 'Nakts pilsēta',
+    sky: '#141820',
+    obstacle: '#d8dce8',
+    cloud: '#4a5060',
+    ground: '#c0c8d8',
+    hud: '#e0e4f0',
+    blk: '#d8dce8',
+    blkSide: '#a8b0c0',
+    belly: '#8890a0',
+    beak: '#f0a028',
+    beakDark: '#a86810',
+    eye: '#ff3048',
+    brow: '#403038',
+    lifeNotice: '#ff9b9b',
+  },
+  {
+    label: 'Neons',
+    sky: '#0a1018',
+    obstacle: '#40f898',
+    cloud: '#206848',
+    ground: '#38e888',
+    hud: '#68ffb8',
+    blk: '#101820',
+    blkSide: '#183028',
+    belly: '#90ffc8',
+    beak: '#ffd028',
+    beakDark: '#c09810',
+    eye: '#ff2860',
+    brow: '#301018',
+    lifeNotice: '#ff6090',
+  },
+];
+
+function worldTierFromScore(scoreVal) {
+  const s = Math.floor(scoreVal);
+  return Math.floor(s / 1000) % WORLD_THEMES.length;
+}
+
+function getWorldTheme(scoreVal) {
+  return WORLD_THEMES[worldTierFromScore(scoreVal)];
+}
+
 const HACK_SHOP = [
   {
     id: 'clear',
@@ -163,8 +303,6 @@ export default function DinoGame() {
       score: 0,
       spawnTimer: 0,
       nextSpawn: 60,
-      night: false,
-      nightTimer: 0,
       running: false,
       over: false,
       lives: INITIAL_LIVES,
@@ -336,12 +474,6 @@ export default function DinoGame() {
         state.lifeNotice.y += dt * 0.5;
       }
 
-      state.nightTimer += dt;
-      if (state.nightTimer > 700) {
-        state.nightTimer = 0;
-        state.night = !state.night;
-      }
-
       if (state.invincibleTimer > 0) {
         state.invincibleTimer = Math.max(0, state.invincibleTimer - dt);
       } else if (state.hackShieldTimer > 0) {
@@ -391,13 +523,14 @@ export default function DinoGame() {
         return;
       }
 
-      const blk = state.night ? '#2a2a34' : '#12121a';
-      const blkSide = state.night ? '#3d3d4c' : '#25252f';
-      const belly = state.night ? '#aeb8c4' : '#e4eaef';
-      const beak = state.night ? '#c95a18' : '#e06012';
-      const beakDark = state.night ? '#7a3810' : '#9a4508';
-      const eye = state.night ? '#ff3a4a' : '#c81018';
-      const brow = state.night ? '#4a1018' : '#2c080c';
+      const theme = getWorldTheme(state.score);
+      const blk = theme.blk;
+      const blkSide = theme.blkSide;
+      const belly = theme.belly;
+      const beak = theme.beak;
+      const beakDark = theme.beakDark;
+      const eye = theme.eye;
+      const brow = theme.brow;
       const foot = beak;
 
       const drawFoot = (fx, fy, w, h) => {
@@ -451,7 +584,7 @@ export default function DinoGame() {
         ctx.fillStyle = eye;
         ctx.fillRect(x + 10, y + 8, 4, 5);
         ctx.fillRect(x + 24, y + 8, 4, 5);
-        ctx.fillStyle = '#f2f6f8';
+        ctx.fillStyle = '#f8fcff';
         ctx.fillRect(x + 11, y + 9, 2, 2);
         ctx.fillRect(x + 25, y + 9, 2, 2);
         ctx.fillStyle = beak;
@@ -493,8 +626,7 @@ export default function DinoGame() {
     };
 
     const drawObstacle = (o) => {
-      const fg = state.night ? '#f7f7f7' : '#535353';
-      ctx.fillStyle = fg;
+      ctx.fillStyle = getWorldTheme(state.score).obstacle;
       if (o.type === 'cactus-small') {
         for (let i = 0; i < o.count; i++) {
           const bx = o.x + i * 17;
@@ -525,8 +657,7 @@ export default function DinoGame() {
     };
 
     const drawGround = () => {
-      const fg = state.night ? '#f7f7f7' : '#535353';
-      ctx.fillStyle = fg;
+      ctx.fillStyle = getWorldTheme(state.score).ground;
       ctx.fillRect(0, GROUND_Y, GAME_WIDTH, 2);
       for (let x = state.ground.offset; x < GAME_WIDTH; x += 24) {
         const bump = (Math.floor(x / 24) % 3) * 2;
@@ -536,8 +667,7 @@ export default function DinoGame() {
     };
 
     const drawClouds = () => {
-      const color = state.night ? '#a0a0a0' : '#c5c5c5';
-      ctx.fillStyle = color;
+      ctx.fillStyle = getWorldTheme(state.score).cloud;
       state.clouds.forEach((c) => {
         ctx.fillRect(c.x + 4, c.y, 28, 4);
         ctx.fillRect(c.x, c.y + 4, 36, 4);
@@ -546,7 +676,7 @@ export default function DinoGame() {
     };
 
     const drawLives = () => {
-      const fg = state.night ? '#f7f7f7' : '#535353';
+      const fg = getWorldTheme(state.score).hud;
       const label = `Dzīvības: ${formatLivesDisplay(state.lives)}`;
       ctx.textAlign = 'left';
       let fs = 14;
@@ -561,7 +691,7 @@ export default function DinoGame() {
     const drawLifeNotice = () => {
       if (state.lifeNotice.timer <= 0) return;
       const alpha = Math.min(1, state.lifeNotice.timer / 30);
-      const color = state.night ? '#ff9b9b' : '#e74c3c';
+      const color = getWorldTheme(state.score).lifeNotice;
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = color;
@@ -577,7 +707,7 @@ export default function DinoGame() {
     };
 
     const drawScore = () => {
-      const fg = state.night ? '#f7f7f7' : '#535353';
+      const fg = getWorldTheme(state.score).hud;
       ctx.fillStyle = fg;
       ctx.font = 'bold 13px monospace';
       ctx.textAlign = 'right';
@@ -594,7 +724,7 @@ export default function DinoGame() {
     };
 
     const drawGameOver = () => {
-      const fg = state.night ? '#f7f7f7' : '#535353';
+      const fg = getWorldTheme(state.score).hud;
       ctx.fillStyle = fg;
       ctx.font = 'bold 24px monospace';
       ctx.textAlign = 'center';
@@ -605,17 +735,28 @@ export default function DinoGame() {
     };
 
     const drawStartScreen = () => {
-      ctx.fillStyle = '#535353';
+      ctx.fillStyle = getWorldTheme(state.score).hud;
       ctx.font = 'bold 18px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('Spied Space, lai sāktu', GAME_WIDTH / 2, 100);
       ctx.textAlign = 'left';
     };
 
+    const drawWorldTag = () => {
+      const theme = getWorldTheme(state.score);
+      ctx.fillStyle = theme.hud;
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'left';
+      ctx.globalAlpha = 0.92;
+      ctx.fillText(`Pasaule: ${theme.label}`, 20, 14);
+      ctx.globalAlpha = 1;
+    };
+
     const draw = () => {
-      ctx.fillStyle = state.night ? '#1a1a1a' : '#f7f7f7';
+      ctx.fillStyle = getWorldTheme(state.score).sky;
       ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+      drawWorldTag();
       drawClouds();
       drawGround();
       state.obstacles.forEach(drawObstacle);
@@ -654,8 +795,6 @@ export default function DinoGame() {
       state.score = 0;
       state.spawnTimer = 0;
       state.nextSpawn = 60;
-      state.night = false;
-      state.nightTimer = 0;
       state.over = false;
       state.running = true;
       state.lives = INITIAL_LIVES;
