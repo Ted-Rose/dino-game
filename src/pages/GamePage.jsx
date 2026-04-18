@@ -7,7 +7,9 @@ export default function GamePage() {
       <DinoGame />
       <p className="hint">
         Spied <kbd>Space</kbd> vai <kbd>↑</kbd>, lai lēktu. <kbd>↓</kbd>, lai
-        pieliektos. Spied <kbd>Space</kbd>, lai sāktu no jauna.
+        pieliektos. Spied <kbd>Space</kbd>, lai sāktu no jauna. Skrējienā pelni
+        naudiņas; paliek maciņā pēc tam, kad pingvīns pakrīt. Zem spēles var
+        nopirkt hakus par maciņa naudu.
       </p>
     </div>
   );

@@ -359,6 +359,91 @@
   border: none;
 }
 
+.hack-shop {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  max-width: 800px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hack-shop-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #444;
+  text-align: center;
+}
+
+.hack-shop-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.hack-shop-card {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hack-shop-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.hack-shop-price {
+  font-family: monospace;
+  font-size: 13px;
+  color: #2c7a3e;
+  white-space: nowrap;
+}
+
+.hack-shop-desc {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  flex: 1;
+  line-height: 1.35;
+}
+
+.hack-shop-btn {
+  align-self: flex-start;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #535353;
+  background: #535353;
+  color: #f7f7f7;
+  cursor: pointer;
+}
+
+.hack-shop-btn:hover:not(:disabled) {
+  background: #3d3d3d;
+}
+
+.hack-shop-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.status-bar-wallet strong {
+  font-family: monospace;
+}
+
 .hint {
   margin-top: 20px;
   font-size: 14px;

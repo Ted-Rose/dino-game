@@ -31,6 +31,43 @@ function formatLivesDisplay(livesBigInt) {
 
 const INVINCIBLE_DURATION = 90;
 
+const HACK_SHOP = [
+  {
+    id: 'clear',
+    name: 'Kaktusu bumba',
+    desc: 'Notīra visus šķēršļus',
+    price: 40,
+  },
+  {
+    id: 'slow',
+    name: 'Lēnā pasaule',
+    desc: 'Skrējiena ātrums −50% apm. 5 s',
+    price: 120,
+    duration: 300,
+  },
+  {
+    id: 'jump',
+    name: 'Super lēciens',
+    desc: 'Augstāks lēciens apm. 8 s',
+    price: 90,
+    duration: 480,
+  },
+  {
+    id: 'magnet',
+    name: 'Naudas magnēts',
+    desc: '2× naudiņas apm. 15 s',
+    price: 200,
+    duration: 900,
+  },
+  {
+    id: 'shield',
+    name: 'Spoku plēve',
+    desc: 'Neredzams (bez triecieniem) apm. 4 s',
+    price: 160,
+    duration: 240,
+  },
+];
+
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -49,10 +86,60 @@ export default function DinoGame() {
   const [lives, setLives] = useState(INITIAL_LIVES);
   const [birdLevel, setBirdLevel] = useState(3);
   const [cactusLevel, setCactusLevel] = useState(7);
+  const [wallet, setWallet] = useState(() => {
+    const raw = localStorage.getItem('dino-wallet');
+    const n = raw ? parseInt(raw, 10) : 0;
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  });
 
   useEffect(() => {
     settingsRef.current = { birdLevel, cactusLevel };
   }, [birdLevel, cactusLevel]);
+
+  const buyHack = (id) => {
+    const item = HACK_SHOP.find((h) => h.id === id);
+    if (!item) return;
+    const st = stateRef.current;
+    const runMoney = Math.floor(st.score);
+    const totalAvailable = wallet + runMoney;
+    if (totalAvailable < item.price) return;
+
+    let owed = item.price;
+    let newWallet = wallet;
+    if (newWallet >= owed) {
+      newWallet -= owed;
+      owed = 0;
+    } else {
+      owed -= newWallet;
+      newWallet = 0;
+    }
+    if (owed > 0) {
+      st.score = Math.max(0, st.score - owed);
+      setScore(Math.floor(st.score));
+    }
+    setWallet(newWallet);
+    localStorage.setItem('dino-wallet', String(newWallet));
+
+    switch (item.id) {
+      case 'clear':
+        st.obstacles = [];
+        break;
+      case 'slow':
+        st.hackSlowTimer = Math.max(st.hackSlowTimer, item.duration ?? 0);
+        break;
+      case 'jump':
+        st.hackJumpTimer = Math.max(st.hackJumpTimer, item.duration ?? 0);
+        break;
+      case 'magnet':
+        st.hackMoneyTimer = Math.max(st.hackMoneyTimer, item.duration ?? 0);
+        break;
+      case 'shield':
+        st.hackShieldTimer = Math.max(st.hackShieldTimer, item.duration ?? 0);
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     const initialState = {
@@ -84,6 +171,10 @@ export default function DinoGame() {
       invincibleTimer: 0,
       lastLifeBonusScore: 0,
       lifeNotice: { timer: 0, y: 0 },
+      hackSlowTimer: 0,
+      hackJumpTimer: 0,
+      hackMoneyTimer: 0,
+      hackShieldTimer: 0,
     };
     stateRef.current = initialState;
   }, []);
@@ -165,6 +256,19 @@ export default function DinoGame() {
         state.speed + PHYSICS.speedIncrease * dt,
       );
 
+      if (state.hackSlowTimer > 0) {
+        state.hackSlowTimer = Math.max(0, state.hackSlowTimer - dt);
+      }
+      if (state.hackJumpTimer > 0) {
+        state.hackJumpTimer = Math.max(0, state.hackJumpTimer - dt);
+      }
+      if (state.hackMoneyTimer > 0) {
+        state.hackMoneyTimer = Math.max(0, state.hackMoneyTimer - dt);
+      }
+
+      const moveMult = state.hackSlowTimer > 0 ? 0.52 : 1;
+      const effSpeed = state.speed * moveMult;
+
       const dino = state.dino;
       if (dino.jumping) {
         dino.vy += PHYSICS.gravity;
@@ -182,11 +286,11 @@ export default function DinoGame() {
         }
       }
 
-      state.ground.offset -= state.speed;
+      state.ground.offset -= effSpeed;
       if (state.ground.offset <= -24) state.ground.offset += 24;
 
       state.clouds.forEach((c) => {
-        c.x -= state.speed * 0.3;
+        c.x -= effSpeed * 0.3;
         if (c.x < -60) {
           c.x = GAME_WIDTH + randomRange(0, 200);
           c.y = randomRange(20, 90);
@@ -194,7 +298,7 @@ export default function DinoGame() {
       });
 
       state.obstacles.forEach((o) => {
-        o.x -= state.speed;
+        o.x -= effSpeed;
         if (o.type === 'bird') {
           o.wingTimer += dt;
           if (o.wingTimer > 10) {
@@ -208,11 +312,12 @@ export default function DinoGame() {
       state.spawnTimer += dt;
       if (state.spawnTimer > state.nextSpawn) {
         state.spawnTimer = 0;
-        state.nextSpawn = randomRange(55, 110) - state.speed * 2;
+        state.nextSpawn = randomRange(55, 110) - effSpeed * 2;
         spawnObstacle();
       }
 
-      state.score += dt * 0.15;
+      const moneyMult = state.hackMoneyTimer > 0 ? 2 : 1;
+      state.score += dt * 0.15 * moneyMult;
       setScore(Math.floor(state.score));
 
       const currentMilestone = Math.floor(state.score / 100);
@@ -239,6 +344,8 @@ export default function DinoGame() {
 
       if (state.invincibleTimer > 0) {
         state.invincibleTimer = Math.max(0, state.invincibleTimer - dt);
+      } else if (state.hackShieldTimer > 0) {
+        state.hackShieldTimer = Math.max(0, state.hackShieldTimer - dt);
       } else {
         for (const o of state.obstacles) {
           if (checkCollision(dino, o)) {
@@ -249,6 +356,12 @@ export default function DinoGame() {
               state.running = false;
               setGameOver(true);
               const finalScore = Math.floor(state.score);
+              const earned = finalScore;
+              setWallet((w) => {
+                const next = w + earned;
+                localStorage.setItem('dino-wallet', String(next));
+                return next;
+              });
               setHighScore((prev) => {
                 if (finalScore > prev) {
                   localStorage.setItem('dino-high-score', String(finalScore));
@@ -273,10 +386,8 @@ export default function DinoGame() {
 
     const drawDino = () => {
       const d = state.dino;
-      if (
-        state.invincibleTimer > 0 &&
-        Math.floor(state.invincibleTimer / 6) % 2 === 0
-      ) {
+      const blinkT = Math.max(state.invincibleTimer, state.hackShieldTimer);
+      if (blinkT > 0 && Math.floor(blinkT / 6) % 2 === 0) {
         return;
       }
 
@@ -444,7 +555,7 @@ export default function DinoGame() {
         fs -= 1;
       } while (ctx.measureText(label).width > GAME_WIDTH - 24 && fs >= 7);
       ctx.fillStyle = fg;
-      ctx.fillText(label, 20, 30);
+      ctx.fillText(label, 20, 74);
     };
 
     const drawLifeNotice = () => {
@@ -468,13 +579,16 @@ export default function DinoGame() {
     const drawScore = () => {
       const fg = state.night ? '#f7f7f7' : '#535353';
       ctx.fillStyle = fg;
-      ctx.font = 'bold 16px monospace';
+      ctx.font = 'bold 13px monospace';
       ctx.textAlign = 'right';
-      const s = String(Math.floor(state.score)).padStart(5, '0');
-      ctx.fillText(s, GAME_WIDTH - 20, 30);
+      const run = String(Math.floor(state.score));
+      ctx.fillText(`Naudiņas: ${run}`, GAME_WIDTH - 20, 22);
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`Maciņš: ${wallet}`, GAME_WIDTH - 20, 38);
+      ctx.font = 'bold 13px monospace';
       if (highScore > 0) {
-        const hs = 'HI ' + String(highScore).padStart(5, '0');
-        ctx.fillText(hs, GAME_WIDTH - 100, 30);
+        const hs = 'REK ' + String(highScore).padStart(5, '0');
+        ctx.fillText(hs, GAME_WIDTH - 20, 54);
       }
       ctx.textAlign = 'left';
     };
@@ -525,7 +639,7 @@ export default function DinoGame() {
 
     animationFrame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animationFrame);
-  }, [highScore]);
+  }, [highScore, wallet]);
 
   useEffect(() => {
     const state = stateRef.current;
@@ -548,6 +662,10 @@ export default function DinoGame() {
       state.invincibleTimer = 0;
       state.lastLifeBonusScore = 0;
       state.lifeNotice = { timer: 0, y: 0 };
+      state.hackSlowTimer = 0;
+      state.hackJumpTimer = 0;
+      state.hackMoneyTimer = 0;
+      state.hackShieldTimer = 0;
       setScore(0);
       setLives(INITIAL_LIVES);
       setGameOver(false);
@@ -557,7 +675,10 @@ export default function DinoGame() {
     const jump = () => {
       if (!state.dino.jumping && !state.dino.ducking) {
         state.dino.jumping = true;
-        state.dino.vy = PHYSICS.jumpVelocity;
+        const jmp =
+          PHYSICS.jumpVelocity *
+          (state.hackJumpTimer > 0 ? 1.42 : 1);
+        state.dino.vy = jmp;
       }
     };
 
@@ -610,7 +731,12 @@ export default function DinoGame() {
         className="game-canvas"
       />
       <div className="status-bar">
-        <span>Punkti: {score}</span>
+        <span>
+          Naudiņas (skrējiens): <strong>{score}</strong>
+        </span>
+        <span className="status-bar-wallet">
+          Maciņš (kopā): <strong>{wallet}</strong>
+        </span>
         <span className="status-bar-lives">
           Dzīvības: {formatLivesDisplay(lives)}
         </span>
@@ -646,6 +772,28 @@ export default function DinoGame() {
           />
         </label>
       </div>
+      <section className="hack-shop" aria-label="Veikals">
+        <h3 className="hack-shop-title">Haču veikals — pērc par maciņa naudiņām</h3>
+        <ul className="hack-shop-grid">
+          {HACK_SHOP.map((item) => (
+            <li key={item.id} className="hack-shop-card">
+              <div className="hack-shop-card-head">
+                <strong>{item.name}</strong>
+                <span className="hack-shop-price">{item.price} 💰</span>
+              </div>
+              <p className="hack-shop-desc">{item.desc}</p>
+              <button
+                type="button"
+                className="hack-shop-btn"
+                disabled={wallet + score < item.price}
+                onClick={() => buyHack(item.id)}
+              >
+                Pirkt
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
