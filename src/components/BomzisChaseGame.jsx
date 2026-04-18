@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import {
   BOMZISCHASE_HACK_CHANGED,
   BOMZISCHASE_HACK_EVENT,
+  BOMZISCHASE_REVIVED_EVENT,
+  BOMZISCHASE_REVIVE_EVENT,
   HACK_INVULN_SEC,
   loadHacks,
   saveHacks,
@@ -36,6 +38,8 @@ export const BOMZISCHASE_BRAKE_EVENT = 'bomzischase:brake';
 export {
   BOMZISCHASE_HACK_CHANGED,
   BOMZISCHASE_HACK_EVENT,
+  BOMZISCHASE_REVIVED_EVENT,
+  BOMZISCHASE_REVIVE_EVENT,
 } from '../data/bomzischaseHacks';
 
 /** Roblox-style blocky avatar (R6-ish): head, torso, arms, legs — feet at y=0 */
@@ -382,6 +386,31 @@ export default function BomzisChaseGame({
 
     const keys = { brake: false };
 
+    let raf = 0;
+
+    function emitGameOver(payload) {
+      if (ended) return;
+      ended = true;
+      endCb.current?.({
+        ...payload,
+        canRevive: loadHacks() >= 1,
+      });
+    }
+
+    function tryRevive() {
+      if (!ended) return;
+      const h = loadHacks();
+      if (h < 1) return;
+      saveHacks(h - 1);
+      ended = false;
+      hackInvuln = HACK_INVULN_SEC;
+      stumble = 0;
+      bomzi.position.z -= 14;
+      window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_CHANGED));
+      window.dispatchEvent(new CustomEvent(BOMZISCHASE_REVIVED_EVENT));
+      raf = requestAnimationFrame(loop);
+    }
+
     const onKd = (e) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         wantJump = true;
@@ -392,7 +421,8 @@ export default function BomzisChaseGame({
         e.preventDefault();
       }
       if (e.code === 'KeyH') {
-        wantHack = true;
+        if (ended) tryRevive();
+        else wantHack = true;
         e.preventDefault();
       }
     };
@@ -412,7 +442,11 @@ export default function BomzisChaseGame({
       keys.brake = Boolean(e.detail?.down);
     };
     const onHackEvent = () => {
-      wantHack = true;
+      if (ended) tryRevive();
+      else wantHack = true;
+    };
+    const onReviveEvent = () => {
+      tryRevive();
     };
     window.addEventListener('keydown', onKd);
     window.addEventListener('keyup', onKu);
@@ -420,7 +454,7 @@ export default function BomzisChaseGame({
     window.addEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
     window.addEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
     window.addEventListener(BOMZISCHASE_HACK_EVENT, onHackEvent);
-    let raf = 0;
+    window.addEventListener(BOMZISCHASE_REVIVE_EVENT, onReviveEvent);
 
     function loop() {
       if (ended) return;
@@ -581,13 +615,10 @@ export default function BomzisChaseGame({
           if (!ok && o.typ === 'laser' && py > 1.38) ok = true;
           if (!ok) {
             if (o.typ === 'laser') {
-              if (!ended) {
-                ended = true;
-                endCb.current?.({
-                  score: Math.floor(score),
-                  laser: true,
-                });
-              }
+              emitGameOver({
+                score: Math.floor(score),
+                laser: true,
+              });
               renderer.render(scene, camera);
               return;
             }
@@ -621,14 +652,11 @@ export default function BomzisChaseGame({
           bomziConnected = true;
       }
       if (bomziConnected && !immune) {
-        if (!ended) {
-          ended = true;
-          endCb.current?.({
-            score: Math.floor(score),
-            caught: true,
-            hitByBomzi: true,
-          });
-        }
+        emitGameOver({
+          score: Math.floor(score),
+          caught: true,
+          hitByBomzi: true,
+        });
         renderer.render(scene, camera);
         return;
       }
@@ -657,14 +685,11 @@ export default function BomzisChaseGame({
       });
 
       if (!immune && distCatch < CATCH_DIST) {
-        if (!ended) {
-          ended = true;
-          endCb.current?.({
-            score: Math.floor(score),
-            caught: true,
-            hitByBomzi: true,
-          });
-        }
+        emitGameOver({
+          score: Math.floor(score),
+          caught: true,
+          hitByBomzi: true,
+        });
         renderer.render(scene, camera);
         return;
       }
@@ -687,6 +712,7 @@ export default function BomzisChaseGame({
       window.removeEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
       window.removeEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
       window.removeEventListener(BOMZISCHASE_HACK_EVENT, onHackEvent);
+      window.removeEventListener(BOMZISCHASE_REVIVE_EVENT, onReviveEvent);
       renderer.dispose();
       if (renderer.domElement.parentNode === wrap) {
         wrap.removeChild(renderer.domElement);

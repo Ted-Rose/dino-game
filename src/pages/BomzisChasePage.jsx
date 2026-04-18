@@ -3,9 +3,11 @@ import BomzisChaseGame, {
   BOMZISCHASE_BRAKE_EVENT,
   BOMZISCHASE_HACK_EVENT,
   BOMZISCHASE_JUMP_EVENT,
+  BOMZISCHASE_REVIVE_EVENT,
 } from '../components/BomzisChaseGame';
 import {
   BOMZISCHASE_HACK_CHANGED,
+  BOMZISCHASE_REVIVED_EVENT,
   HACK_PACK_AMOUNT,
   HACK_PACK_PRICE,
   loadHacks,
@@ -70,17 +72,31 @@ export default function BomzisChasePage() {
   );
 
   const onHud = useCallback((h) => setHud(h), []);
-  const onGameOver = useCallback((payload) => {
-    setGameOver(payload);
-    const earned = Math.floor(payload.score ?? 0);
-    if (earned > 0) {
-      setWallet((w) => {
-        const next = w + earned;
-        saveWallet(next);
-        return next;
-      });
-    }
+
+  const bankRunScore = useCallback((score) => {
+    const earned = Math.floor(score ?? 0);
+    if (earned <= 0) return;
+    setWallet((w) => {
+      const next = w + earned;
+      saveWallet(next);
+      return next;
+    });
   }, []);
+
+  const onGameOver = useCallback(
+    (payload) => {
+      setGameOver(payload);
+      const earned = Math.floor(payload.score ?? 0);
+      if (payload.canRevive && earned > 0) return;
+      if (earned > 0) bankRunScore(earned);
+    },
+    [bankRunScore],
+  );
+
+  const finalizeRunAndReload = useCallback(() => {
+    if (gameOver?.score != null) bankRunScore(gameOver.score);
+    window.location.reload();
+  }, [gameOver, bankRunScore]);
 
   useEffect(() => {
     const mq = window.matchMedia('(pointer: coarse)');
@@ -98,6 +114,12 @@ export default function BomzisChasePage() {
     const sync = () => setHacks(loadHacks());
     window.addEventListener(BOMZISCHASE_HACK_CHANGED, sync);
     return () => window.removeEventListener(BOMZISCHASE_HACK_CHANGED, sync);
+  }, []);
+
+  useEffect(() => {
+    const onRevived = () => setGameOver(null);
+    window.addEventListener(BOMZISCHASE_REVIVED_EVENT, onRevived);
+    return () => window.removeEventListener(BOMZISCHASE_REVIVED_EVENT, onRevived);
   }, []);
 
   useEffect(() => {
@@ -133,6 +155,10 @@ export default function BomzisChasePage() {
 
   const fireHack = useCallback(() => {
     window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_EVENT));
+  }, []);
+
+  const fireRevive = useCallback(() => {
+    window.dispatchEvent(new CustomEvent(BOMZISCHASE_REVIVE_EVENT));
   }, []);
 
   const buyHackPack = useCallback(() => {
@@ -401,26 +427,62 @@ export default function BomzisChasePage() {
           </span>
           {gameOver && (
             <span className="bomzischase-gameover">
-              {gameOver.laser ? (
+              {gameOver.canRevive ? (
+                <>
+                  {gameOver.laser ? (
+                    <>Lāzers tevi trāpīja — </>
+                  ) : (
+                    <>Bomzis pārāk tuvu vai trāpa ar nūju — </>
+                  )}
+                  Šajā skrējienā uzkrātas{' '}
+                  <strong>{gameOver.score}</strong> naudiņas; tās ieskaitīs maciņā, kad
+                  skrējiena beigas.{' '}
+                  <button
+                    type="button"
+                    className="bomzischase-revive"
+                    onClick={fireRevive}
+                  >
+                    Atdzīvoties (1 haks)
+                  </button>{' '}
+                  ·{' '}
+                  <button
+                    type="button"
+                    className="bomzischase-reload"
+                    onClick={finalizeRunAndReload}
+                  >
+                    Beigt skrējienu un spēlēt vēlreiz
+                  </button>{' '}
+                  <span className="bomzischase-revive-hint">
+                    (<kbd>H</kbd> vai «Haks» arī atdzīvina.)
+                  </span>
+                </>
+              ) : gameOver.laser ? (
                 <>
                   Lāzers tevi trāpīja — jāsāk no sākuma. Šajā skrējienā{' '}
                   <strong>{gameOver.score}</strong> naudiņas ieskaitītas maciņā (kopā{' '}
                   <strong>{wallet}</strong>).{' '}
+                  <button
+                    type="button"
+                    className="bomzischase-reload"
+                    onClick={() => window.location.reload()}
+                  >
+                    Spēlēt vēlreiz
+                  </button>
                 </>
               ) : (
                 <>
                   Bomzis tevi sita ar nūju — spēle no jauna. Šajā skrējienā{' '}
                   <strong>{gameOver.score}</strong> naudiņas ieskaitītas maciņā (kopā{' '}
                   <strong>{wallet}</strong>).{' '}
+                  <button
+                    type="button"
+                    className="bomzischase-reload"
+                    onClick={() => window.location.reload()}
+                  >
+                    Spēlēt vēlreiz
+                  </button>
                 </>
               )}
-              <button
-                type="button"
-                className="bomzischase-reload"
-                onClick={() => window.location.reload()}
-              >
-                Spēlēt vēlreiz
-              </button>
             </span>
           )}
         </div>
@@ -432,8 +494,8 @@ export default function BomzisChasePage() {
             <>
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens,
-              «<span className="bomzischase-help-strong">Haks</span>» — īsa aizsardzība (ja
-              ir haki). Zemie klucīši — trieciens;{' '}
+              «<span className="bomzischase-help-strong">Haks</span>» — īsa aizsardzība vai
+              atdzīvināšana (ja ir haki). Zemie klucīši — trieciens;{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> — no jauna.
               Naudiņas krāj maciņā; bodē vari pirkt hakus vai savu avatāru.
@@ -441,7 +503,8 @@ export default function BomzisChasePage() {
           ) : (
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
-              apstāties · <kbd>H</kbd> — haks (īslaicīga aizsardzība, ja ir krājumā). Zemie
+              apstāties · <kbd>H</kbd> — haks dzīvē vai pēc zaudējuma — atdzīvoties (viens
+              haks). Zemie
               klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> — spēle no
               jauna. Skrējiena punkti kļūst par naudiņām bodē; vari pirkt 10 haku komplektu.

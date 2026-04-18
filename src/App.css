@@ -941,6 +941,30 @@
   font-weight: 700;
 }
 
+.bomzischase-revive {
+  margin-left: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 2px solid #6b4590;
+  background: linear-gradient(180deg, #b080d8 0%, #8a58b0 100%);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+
+.bomzischase-revive:hover {
+  filter: brightness(1.06);
+}
+
+.bomzischase-revive-hint {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  color: #555;
+}
+
 .bomzischase-reload {
   margin-left: 10px;
   padding: 6px 12px;
