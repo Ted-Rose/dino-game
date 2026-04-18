@@ -19,7 +19,16 @@ const PHYSICS = {
   speedIncrease: 0.0015,
 };
 
-const INITIAL_LIVES = 100000;
+const INITIAL_LIVES_STRING =
+  '0000000000000000099999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999';
+const INITIAL_LIVES = BigInt(INITIAL_LIVES_STRING);
+
+function formatLivesDisplay(livesBigInt) {
+  const s = livesBigInt.toString();
+  const L = INITIAL_LIVES_STRING.length;
+  return s.length < L ? s.padStart(L, '0') : s;
+}
+
 const INVINCIBLE_DURATION = 90;
 
 function randomRange(min, max) {
@@ -211,7 +220,7 @@ export default function DinoGame() {
       if (currentMilestone > lastMilestone) {
         state.lastLifeBonusScore = currentMilestone * 100;
         if (state.lives < INITIAL_LIVES) {
-          state.lives += 1;
+          state.lives += 1n;
           setLives(state.lives);
           state.lifeNotice = { timer: 60, y: 0 };
         }
@@ -233,9 +242,9 @@ export default function DinoGame() {
       } else {
         for (const o of state.obstacles) {
           if (checkCollision(dino, o)) {
-            state.lives -= 1;
+            state.lives -= 1n;
             setLives(state.lives);
-            if (state.lives <= 0) {
+            if (state.lives <= 0n) {
               state.over = true;
               state.running = false;
               setGameOver(true);
@@ -427,11 +436,15 @@ export default function DinoGame() {
 
     const drawLives = () => {
       const fg = state.night ? '#f7f7f7' : '#535353';
-      ctx.fillStyle = fg;
-      ctx.font = 'bold 14px monospace';
+      const label = `Dzīvības: ${formatLivesDisplay(state.lives)}`;
       ctx.textAlign = 'left';
-      const n = Math.max(0, Math.floor(state.lives));
-      ctx.fillText(`Dzīvības: ${n}`, 20, 30);
+      let fs = 14;
+      do {
+        ctx.font = `bold ${fs}px monospace`;
+        fs -= 1;
+      } while (ctx.measureText(label).width > GAME_WIDTH - 24 && fs >= 7);
+      ctx.fillStyle = fg;
+      ctx.fillText(label, 20, 30);
     };
 
     const drawLifeNotice = () => {
@@ -598,7 +611,9 @@ export default function DinoGame() {
       />
       <div className="status-bar">
         <span>Punkti: {score}</span>
-        <span>Dzīvības: {lives}</span>
+        <span className="status-bar-lives">
+          Dzīvības: {formatLivesDisplay(lives)}
+        </span>
         <span>Rekords: {highScore}</span>
         {gameOver && <span className="game-over-text">Spēle galā!</span>}
         {!started && !gameOver && <span>Spied Space, lai sāktu</span>}
