@@ -35,8 +35,6 @@ export default function BomzisChasePage() {
     score: 0,
     gap: 11,
     braking: false,
-    speedBracket: 0,
-    speedMult: 1,
   });
   const [gameOver, setGameOver] = useState(null);
   const [touchUi, setTouchUi] = useState(false);
@@ -147,9 +145,7 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>. Skrējienā krāj{' '}
-          <strong>naudiņas</strong> — ik pa <strong>10</strong> skrienot ātrāk; bodē vari
-          nopirkt gatavus izskatus vai{' '}
+          Bomžam ir viens uzdevums — <strong>tevi nosist</strong>.           Skrējienā krāj <strong>naudiņas</strong>; bodē vari nopirkt gatavus izskatus vai{' '}
           <strong>uzlikt savas krāsas</strong>. Platāks skats rāda bomzi ar nūju; vari
           apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
         </p>
@@ -330,9 +326,6 @@ export default function BomzisChasePage() {
           </span>
           <span>
             Maciņā: <strong>{wallet}</strong> naudiņas
-          </span>
-          <span className="bomzischase-speed-tag">
-            Ātrums ×{hud.speedMult ?? 1} · ik {10} np. spēcīgāk
           </span>
           <span>
             Līdz bomzim ~<strong>{hud.gap}</strong> m — viņš cenšas tevi nosist

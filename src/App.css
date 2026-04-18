@@ -657,19 +657,6 @@
   font-weight: 600;
 }
 
-.bomzischase-speed-tag {
-  font-size: 13px;
-  color: #557;
-}
-
-@media (max-width: 520px) {
-  .bomzischase-speed-tag {
-    flex-basis: 100%;
-    justify-content: center;
-    text-align: center;
-  }
-}
-
 .bomzischase-builder {
   width: 100%;
   max-width: 880px;
