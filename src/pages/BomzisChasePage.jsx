@@ -4,6 +4,8 @@ import BomzisChaseGame, {
   BOMZISCHASE_HACK_EVENT,
   BOMZISCHASE_JUMP_EVENT,
   BOMZISCHASE_REVIVE_EVENT,
+  BOMZISCHASE_STRAFE_LEFT_EVENT,
+  BOMZISCHASE_STRAFE_RIGHT_EVENT,
 } from '../components/BomzisChaseGame';
 import {
   BOMZISCHASE_HACK_CHANGED,
@@ -157,6 +159,27 @@ export default function BomzisChasePage() {
     window.dispatchEvent(new CustomEvent(BOMZISCHASE_HACK_EVENT));
   }, []);
 
+  const fireStrafeLeftDown = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_STRAFE_LEFT_EVENT, { detail: { down: true } }),
+    );
+  }, []);
+  const fireStrafeLeftUp = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_STRAFE_LEFT_EVENT, { detail: { down: false } }),
+    );
+  }, []);
+  const fireStrafeRightDown = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_STRAFE_RIGHT_EVENT, { detail: { down: true } }),
+    );
+  }, []);
+  const fireStrafeRightUp = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_STRAFE_RIGHT_EVENT, { detail: { down: false } }),
+    );
+  }, []);
+
   const fireRevive = useCallback(() => {
     window.dispatchEvent(new CustomEvent(BOMZISCHASE_REVIVE_EVENT));
   }, []);
@@ -206,7 +229,9 @@ export default function BomzisChasePage() {
         <p className="bomzischase-tag">
           Bomžam ir viens uzdevums — <strong>tevi nosist</strong>.           Skrējienā krāj <strong>naudiņas</strong>; bodē vari nopirkt gatavus izskatus,{' '}
           <strong>hakus</strong> vai <strong>uzlikt savas krāsas</strong>. Platāks skats
-          rāda bomzi ar nūju; vari apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»).
+          rāda bomzi ar nūju; vari apstāties (<kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»), sāņus
+          slīdēt (<kbd>A</kbd>/<kbd>D</kbd> vai bultiņas). Ir bedres ar divām malām — lec pāri
+          no vienas puses uz otru.
         </p>
       </div>
 
@@ -360,46 +385,84 @@ export default function BomzisChasePage() {
             onGameOver={onGameOver}
           />
           {touchUi && (
-            <div className="bomzischase-touch-controls">
-              <button
-                type="button"
-                className="bomzischase-brake-btn"
-                aria-label="Stāvēt — turēt, lai apstātos"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  fireBrakeDown();
-                }}
-                onPointerUp={(e) => {
-                  e.preventDefault();
-                  fireBrakeUp();
-                }}
-                onPointerCancel={() => fireBrakeUp()}
-                onPointerLeave={() => fireBrakeUp()}
-              >
-                Stāvēt
-              </button>
-              <button
-                type="button"
-                className="bomzischase-jump-btn"
-                aria-label="Lēkt"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  fireJump();
-                }}
-              >
-                Lēkt
-              </button>
-              <button
-                type="button"
-                className="bomzischase-hack-btn"
-                aria-label="Haks — īslaicīga aizsardzība"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  fireHack();
-                }}
-              >
-                Haks
-              </button>
+            <div className="bomzischase-touch-stack">
+              <div className="bomzischase-touch-strafe">
+                <button
+                  type="button"
+                  className="bomzischase-strafe-btn bomzischase-strafe-btn--left"
+                  aria-label="Pa kreisi — turēt"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    fireStrafeLeftDown();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    fireStrafeLeftUp();
+                  }}
+                  onPointerCancel={() => fireStrafeLeftUp()}
+                  onPointerLeave={() => fireStrafeLeftUp()}
+                >
+                  ← Kreisi
+                </button>
+                <button
+                  type="button"
+                  className="bomzischase-strafe-btn bomzischase-strafe-btn--right"
+                  aria-label="Pa labi — turēt"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    fireStrafeRightDown();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    fireStrafeRightUp();
+                  }}
+                  onPointerCancel={() => fireStrafeRightUp()}
+                  onPointerLeave={() => fireStrafeRightUp()}
+                >
+                  Labi →
+                </button>
+              </div>
+              <div className="bomzischase-touch-controls">
+                <button
+                  type="button"
+                  className="bomzischase-brake-btn"
+                  aria-label="Stāvēt — turēt, lai apstātos"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    fireBrakeDown();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    fireBrakeUp();
+                  }}
+                  onPointerCancel={() => fireBrakeUp()}
+                  onPointerLeave={() => fireBrakeUp()}
+                >
+                  Stāvēt
+                </button>
+                <button
+                  type="button"
+                  className="bomzischase-jump-btn"
+                  aria-label="Lēkt"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    fireJump();
+                  }}
+                >
+                  Lēkt
+                </button>
+                <button
+                  type="button"
+                  className="bomzischase-hack-btn"
+                  aria-label="Haks — īslaicīga aizsardzība"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    fireHack();
+                  }}
+                >
+                  Haks
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -495,7 +558,8 @@ export default function BomzisChasePage() {
               «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
               «<span className="bomzischase-help-strong">Lēkt</span>» — leciens,
               «<span className="bomzischase-help-strong">Haks</span>» — īsa aizsardzība vai
-              atdzīvināšana (ja ir haki). Ir arī augstas sienas, platāki baļķi un stabu sprauga;
+              atdzīvināšana (ja ir haki). Kreisi/labi — sāņus slīdēt; tumšajā bedrē zemē vidū
+              jālec pāri uz otru malu. Arī augstas sienas, platāki baļķi, stabu sprauga;
               zemie klucīši — trieciens;{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> — no jauna.
@@ -504,9 +568,10 @@ export default function BomzisChasePage() {
           ) : (
             <>
               <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
-              apstāties · <kbd>H</kbd> — haks dzīvē vai pēc zaudējuma — atdzīvoties (viens
-              haks). Šķēršļi — zemie klucīši un platie baļķi, augstas sienas (augstāks lēciens),
-              stabu sprauga,{' '}
+              apstāties · <kbd>A</kbd>/<kbd>D</kbd> vai <kbd>←</kbd>/<kbd>→</kbd> — sāņus
+              slīdēt · <kbd>H</kbd> — haks vai pēc zaudējuma atdzīvoties. Tumšā bedre: sāk no
+              vienas malas lec pāri vidum uz otru malu. Citi šķēršļi — zemie klucīši un platie
+              baļķi, augstas sienas (augstāks lēciens), stabu sprauga,{' '}
               <span className="bomzischase-help-strong">lāzers</span> vai{' '}
               <span className="bomzischase-help-strong">bomzis tevi nosist</span> — spēle no
               jauna. Skrējiena punkti kļūst par naudiņām bodē; vari pirkt 10 haku komplektu.

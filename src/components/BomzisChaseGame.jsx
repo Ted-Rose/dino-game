@@ -22,10 +22,11 @@ const LOOK_BOMZI_MIX = 0.42;
 const HURDLE_GAP_MIN = 11.8;
 const HURDLE_GAP_MAX = 14.5;
 /** Varbūtības vienai «rindai» (atlikums = parastais zems klucis) */
-const LASER_CHANCE = 0.26;
-const HIGH_WALL_CHANCE = 0.18;
-const WIDE_LOW_CHANCE = 0.15;
-const PILLAR_GAP_CHANCE = 0.12;
+const LASER_CHANCE = 0.23;
+const HIGH_WALL_CHANCE = 0.17;
+const WIDE_LOW_CHANCE = 0.13;
+const PILLAR_GAP_CHANCE = 0.11;
+const PIT_SPAN_CHANCE = 0.12;
 /** Leciena augstums, lai pārskriet šķērsli / zem lāzera */
 const CLEAR_LOW = 1.02;
 const CLEAR_LASER = 1.38;
@@ -40,6 +41,12 @@ const STRIKE_LUNGE_SPEED = 22;
 const STICK_HIT_PAD = 1.05;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
+/** Sānu slīdēšana + «bedres» šķērslim */
+const TRACK_HALF = 2.38;
+const STRAFE_SPEED = 11.5;
+
+export const BOMZISCHASE_STRAFE_LEFT_EVENT = 'bomzischase:strafe-left';
+export const BOMZISCHASE_STRAFE_RIGHT_EVENT = 'bomzischase:strafe-right';
 
 export const BOMZISCHASE_JUMP_EVENT = 'bomzischase:jump';
 export const BOMZISCHASE_BRAKE_EVENT = 'bomzischase:brake';
@@ -387,6 +394,53 @@ export default function BomzisChaseGame({
       });
     }
 
+    /**
+     * Divas malas ar bedri vidū — uz zemes vidū paliekot, trieciens.
+     * Jānobīdās uz malu un jālec pāri bedrei uz otru malu.
+     */
+    function spawnPitSpan(aheadZ) {
+      const pitHalfWidth = 0.91;
+      const pitHalfZ = 0.69;
+      const platW = 1.06;
+      const platH = 0.54;
+      const platD = 1.38;
+      const matPlat = new THREE.MeshStandardMaterial({
+        color: Math.random() < 0.5 ? 0x6f5e48 : 0x8c744c,
+        roughness: 0.8,
+      });
+      const geom = new THREE.BoxGeometry(platW, platH, platD);
+      const leftPlat = new THREE.Mesh(geom, matPlat);
+      leftPlat.castShadow = true;
+      leftPlat.receiveShadow = true;
+      leftPlat.position.set(-1.44, platH * 0.5, 0);
+      const rightPlat = new THREE.Mesh(geom, matPlat);
+      rightPlat.castShadow = true;
+      rightPlat.receiveShadow = true;
+      rightPlat.position.set(1.44, platH * 0.5, 0);
+      const pitMat = new THREE.MeshStandardMaterial({
+        color: 0x15151c,
+        roughness: 1,
+      });
+      const pitVis = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.88, platD * 0.94),
+        pitMat,
+      );
+      pitVis.rotation.x = -Math.PI / 2;
+      pitVis.position.set(0, 0.025, 0);
+      pitVis.receiveShadow = true;
+      const root = new THREE.Group();
+      root.add(leftPlat, rightPlat, pitVis);
+      root.position.set(0, 0, aheadZ);
+      scene.add(root);
+      obstacles.push({
+        mesh: root,
+        z: aheadZ,
+        typ: 'pit_span',
+        pitHalfWidth,
+        pitHalfZ,
+      });
+    }
+
     function spawnLaserGate(aheadZ) {
       const root = new THREE.Group();
       const postGeo = new THREE.BoxGeometry(0.24, 1.42, 0.24);
@@ -461,10 +515,15 @@ export default function BomzisChaseGame({
         spawnPillarGap(aheadZ);
         return;
       }
+      t += PIT_SPAN_CHANCE;
+      if (r < t) {
+        spawnPitSpan(aheadZ);
+        return;
+      }
       spawnObstacle(aheadZ);
     }
 
-    const px = 0;
+    let px = 0;
     let pz = 4;
     let py = 0;
     let vy = 0;
@@ -484,7 +543,7 @@ export default function BomzisChaseGame({
         HURDLE_GAP_MIN + Math.random() * (HURDLE_GAP_MAX - HURDLE_GAP_MIN);
     }
 
-    const keys = { brake: false };
+    const keys = { brake: false, left: false, right: false };
 
     let raf = 0;
 
@@ -520,6 +579,14 @@ export default function BomzisChaseGame({
         keys.brake = true;
         e.preventDefault();
       }
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        keys.left = true;
+        e.preventDefault();
+      }
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        keys.right = true;
+        e.preventDefault();
+      }
       if (e.code === 'KeyH') {
         if (ended) tryRevive();
         else wantHack = true;
@@ -529,6 +596,12 @@ export default function BomzisChaseGame({
     const onKu = (e) => {
       if (e.code === 'ArrowDown' || e.code === 'KeyS') {
         keys.brake = false;
+      }
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        keys.left = false;
+      }
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        keys.right = false;
       }
     };
     const onPointerJump = (e) => {
@@ -548,6 +621,12 @@ export default function BomzisChaseGame({
     const onReviveEvent = () => {
       tryRevive();
     };
+    const onStrafeLeftEvent = (e) => {
+      keys.left = Boolean(e.detail?.down);
+    };
+    const onStrafeRightEvent = (e) => {
+      keys.right = Boolean(e.detail?.down);
+    };
     window.addEventListener('keydown', onKd);
     window.addEventListener('keyup', onKu);
     wrap.addEventListener('pointerdown', onPointerJump, { passive: false });
@@ -555,6 +634,8 @@ export default function BomzisChaseGame({
     window.addEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
     window.addEventListener(BOMZISCHASE_HACK_EVENT, onHackEvent);
     window.addEventListener(BOMZISCHASE_REVIVE_EVENT, onReviveEvent);
+    window.addEventListener(BOMZISCHASE_STRAFE_LEFT_EVENT, onStrafeLeftEvent);
+    window.addEventListener(BOMZISCHASE_STRAFE_RIGHT_EVENT, onStrafeRightEvent);
 
     function loop() {
       if (ended) return;
@@ -590,6 +671,15 @@ export default function BomzisChaseGame({
 
       pz += forwardSpd * dt;
       score += forwardSpd * dt;
+
+      let sx = 0;
+      if (keys.left) sx -= 1;
+      if (keys.right) sx += 1;
+      if (sx !== 0) {
+        const sm = stumble > 0 ? 0.52 : 1;
+        px += sx * STRAFE_SPEED * sm * dt;
+        px = THREE.MathUtils.clamp(px, -TRACK_HALF, TRACK_HALF);
+      }
 
       player.position.set(px, py, pz);
 
@@ -635,7 +725,7 @@ export default function BomzisChaseGame({
       );
       bomzi.position.x = THREE.MathUtils.lerp(
         bomzi.position.x,
-        0,
+        px,
         Math.min(1, 10 * dt),
       );
       bomzi.position.y = 0;
@@ -690,6 +780,17 @@ export default function BomzisChaseGame({
         if (o.z < pz - 15) {
           scene.remove(o.mesh);
           obstacles.splice(i, 1);
+          continue;
+        }
+        if (o.typ === 'pit_span') {
+          if (
+            !immune &&
+            py < 0.13 &&
+            Math.abs(px) < o.pitHalfWidth &&
+            Math.abs(pz - o.z) < o.pitHalfZ
+          ) {
+            stumble = STUMBLE_TIME;
+          }
           continue;
         }
         if (o.typ === 'pillars' && o.parts) {
@@ -825,6 +926,8 @@ export default function BomzisChaseGame({
       window.removeEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
       window.removeEventListener(BOMZISCHASE_HACK_EVENT, onHackEvent);
       window.removeEventListener(BOMZISCHASE_REVIVE_EVENT, onReviveEvent);
+      window.removeEventListener(BOMZISCHASE_STRAFE_LEFT_EVENT, onStrafeLeftEvent);
+      window.removeEventListener(BOMZISCHASE_STRAFE_RIGHT_EVENT, onStrafeRightEvent);
       renderer.dispose();
       if (renderer.domElement.parentNode === wrap) {
         wrap.removeChild(renderer.domElement);
