@@ -19,6 +19,9 @@ const PHYSICS = {
   speedIncrease: 0.0015,
 };
 
+/** Simulācijas laika mērogs: viss (kustība, naudiņas, taimeri) 1000× ātrāk. */
+const GAME_SPEED_MULT = 1000;
+
 const INITIAL_LIVES_STRING =
   '0000000000000000099999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999';
 const INITIAL_LIVES = BigInt(INITIAL_LIVES_STRING);
@@ -479,19 +482,22 @@ export default function DinoGame() {
     const update = (dt, deltaMs) => {
       if (!state.running || state.over) return;
 
+      const dtF = dt * GAME_SPEED_MULT;
+      const dm = deltaMs * GAME_SPEED_MULT;
+
       state.speed = Math.min(
         PHYSICS.maxSpeed,
-        state.speed + PHYSICS.speedIncrease * dt,
+        state.speed + PHYSICS.speedIncrease * dtF,
       );
 
       if (state.hackSlowTimer > 0) {
-        state.hackSlowTimer = Math.max(0, state.hackSlowTimer - dt);
+        state.hackSlowTimer = Math.max(0, state.hackSlowTimer - dtF);
       }
       if (state.hackJumpTimer > 0) {
-        state.hackJumpTimer = Math.max(0, state.hackJumpTimer - dt);
+        state.hackJumpTimer = Math.max(0, state.hackJumpTimer - dtF);
       }
       if (state.hackMoneyTimer > 0) {
-        state.hackMoneyTimer = Math.max(0, state.hackMoneyTimer - dt);
+        state.hackMoneyTimer = Math.max(0, state.hackMoneyTimer - dtF);
       }
 
       const moveMult = state.hackSlowTimer > 0 ? 0.52 : 1;
@@ -499,26 +505,29 @@ export default function DinoGame() {
 
       const dino = state.dino;
       if (dino.jumping) {
-        dino.vy += PHYSICS.gravity;
-        dino.y += dino.vy;
-        if (dino.y >= GROUND_Y - DINO.height) {
-          dino.y = GROUND_Y - DINO.height;
-          dino.vy = 0;
-          dino.jumping = false;
+        for (let si = 0; si < GAME_SPEED_MULT; si++) {
+          dino.vy += PHYSICS.gravity;
+          dino.y += dino.vy;
+          if (dino.y >= GROUND_Y - DINO.height) {
+            dino.y = GROUND_Y - DINO.height;
+            dino.vy = 0;
+            dino.jumping = false;
+            break;
+          }
         }
       } else if (!dino.ducking) {
-        dino.legTimer += dt;
+        dino.legTimer += dtF;
         if (dino.legTimer > 6) {
           dino.legTimer = 0;
           dino.legFrame = 1 - dino.legFrame;
         }
       }
 
-      state.ground.offset -= effSpeed;
-      if (state.ground.offset <= -24) state.ground.offset += 24;
+      state.ground.offset -= effSpeed * dtF;
+      while (state.ground.offset <= -24) state.ground.offset += 24;
 
       state.clouds.forEach((c) => {
-        c.x -= effSpeed * 0.3;
+        c.x -= effSpeed * 0.3 * dtF;
         if (c.x < -60) {
           c.x = GAME_WIDTH + randomRange(0, 200);
           c.y = randomRange(20, 90);
@@ -526,9 +535,9 @@ export default function DinoGame() {
       });
 
       state.obstacles.forEach((o) => {
-        o.x -= effSpeed;
+        o.x -= effSpeed * dtF;
         if (o.type === 'bird') {
-          o.wingTimer += dt;
+          o.wingTimer += dtF;
           if (o.wingTimer > 10) {
             o.wingTimer = 0;
             o.wing = 1 - o.wing;
@@ -537,7 +546,7 @@ export default function DinoGame() {
       });
       state.obstacles = state.obstacles.filter((o) => o.x + o.width > 0);
 
-      state.spawnTimer += dt;
+      state.spawnTimer += dtF;
       if (state.spawnTimer > state.nextSpawn) {
         state.spawnTimer = 0;
         state.nextSpawn = randomRange(55, 110) - effSpeed * 2;
@@ -545,7 +554,7 @@ export default function DinoGame() {
       }
 
       const moneyMult = state.hackMoneyTimer > 0 ? 2n : 1n;
-      const dms = Math.max(0, Math.round(deltaMs));
+      const dms = Math.max(0, Math.round(dm));
       state.score += (PER_SECOND_NAUDA * BigInt(dms) * moneyMult) / 1000n;
       setScore(state.score.toString());
 
@@ -561,14 +570,14 @@ export default function DinoGame() {
       }
 
       if (state.lifeNotice.timer > 0) {
-        state.lifeNotice.timer = Math.max(0, state.lifeNotice.timer - dt);
-        state.lifeNotice.y += dt * 0.5;
+        state.lifeNotice.timer = Math.max(0, state.lifeNotice.timer - dtF);
+        state.lifeNotice.y += dtF * 0.5;
       }
 
       if (state.invincibleTimer > 0) {
-        state.invincibleTimer = Math.max(0, state.invincibleTimer - dt);
+        state.invincibleTimer = Math.max(0, state.invincibleTimer - dtF);
       } else if (state.hackShieldTimer > 0) {
-        state.hackShieldTimer = Math.max(0, state.hackShieldTimer - dt);
+        state.hackShieldTimer = Math.max(0, state.hackShieldTimer - dtF);
       } else {
         for (const o of state.obstacles) {
           if (checkCollision(dino, o)) {
