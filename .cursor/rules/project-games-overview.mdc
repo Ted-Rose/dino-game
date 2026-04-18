@@ -1,0 +1,44 @@
+---
+description: Šī repozitorija spēļu kartīte — maršruti, faili un kā pievienot jaunu spēli.
+alwaysApply: true
+---
+
+# Spēles projektā (`dino-game`)
+
+Stack: **Vite**, **React**, **react-router-dom**. Globālais izkārtojums: `Layout` (burger izvēlne), saturs `Outlet`. Stils bieži `src/App.css`; spēļu lapām ir savas klases (`page-*`).
+
+Ja lietotājs runā par „šo spēli“ bez nosaukuma, **precizē maršrutu / izvēlnes nosaukumu** vai jautā, kuru minēja.
+
+---
+
+## Esošās spēles un maršruti
+
+| Nosaukums (izvēlnē) | Ceļš | Galvenā lapa | Īsumā |
+|---------------------|------|--------------|--------|
+| **Chrome Bikšu spēle** | `/` | `src/pages/GamePage.jsx` | Dino/Chrome bikšu mini-spēle (sākumlapa). |
+| **Rūķīša ceļojums** | `/rukitis` | `src/pages/GnomePage.jsx` | Multi-fāžu piedzīvojums; loģika/spēle `src/components/GnomeGame.jsx` un saistītajos komponentos. |
+| **99 naktis mežā (3D)** | `/99-naktis-mezā` | `src/pages/Forest99Page.jsx` | Three.js mežs: `src/components/Forest99Game.jsx`, skārien vadība `Forest99TouchControls.jsx`, audio `Forest99Audio.js`. |
+| **Cita lapa** (nav izvēlnē kā „spēle“, bet satur spēli) | `/cita-lapa` | `src/pages/OtherPage.jsx` | `PipeGame` (`src/components/PipeGame.jsx`) — cauruļu spēle. |
+
+Maršruti definēti `src/App.jsx`. Burger saites: `src/components/BurgerMenu.jsx`.
+
+---
+
+## Jaunas spēles pieprasījums
+
+**Lietotājs drīkst prasīt izveidot jaunu spēli** — tad:
+
+1. Pievienot `Route` un lapu komponentu `src/pages/`.
+2. Izvēlnē (`BurgerMenu`) jauns `NavLink` zem atbilstošās sadaļas.
+3. Sekot esošajiem konvencēm (viena lapa = viens maršruts; smagā logika komponentēs).
+4. Ja nepieciešams SEO / tieša saite: atcerēties **SPA** uz Vercel — projektā ir `vercel.json` ar rewrite uz `index.html`.
+
+Pēc būtiskām izmaiņām atbilstoši projekta noteikumiem veikt **git commit un push**.
+
+---
+
+## Ātri faili
+
+- Maršruti: `src/App.jsx`
+- Izvēlne: `src/components/BurgerMenu.jsx`
+- Forest 3D: `src/components/Forest99Game.jsx`, `src/pages/Forest99Page.jsx`
