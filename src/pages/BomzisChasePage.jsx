@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import BomzisChaseGame, {
+  BOMZISCHASE_BRAKE_EVENT,
   BOMZISCHASE_JUMP_EVENT,
 } from '../components/BomzisChaseGame';
 
 export default function BomzisChasePage() {
-  const [hud, setHud] = useState({ score: 0, gap: 11 });
+  const [hud, setHud] = useState({ score: 0, gap: 11, braking: false });
   const [gameOver, setGameOver] = useState(null);
   const [touchUi, setTouchUi] = useState(false);
 
@@ -44,6 +45,18 @@ export default function BomzisChasePage() {
     window.dispatchEvent(new CustomEvent(BOMZISCHASE_JUMP_EVENT));
   }, []);
 
+  const fireBrakeDown = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_BRAKE_EVENT, { detail: { down: true } }),
+    );
+  }, []);
+
+  const fireBrakeUp = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent(BOMZISCHASE_BRAKE_EVENT, { detail: { down: false } }),
+    );
+  }, []);
+
   return (
     <div
       className={`app page-bomzischase${touchUi ? ' page-bomzischase--touch' : ''}`}
@@ -51,8 +64,8 @@ export default function BomzisChasePage() {
       <div className="bomzischase-title-bar">
         <h1>Bomža medības</h1>
         <p className="bomzischase-tag">
-          Tu redzi savu klucīšu avatāru un no sāna palīdzīgi arī bomzi ar garu nūju,
-          kas dzenas pakaļ — šķēršļi un pulsējoši sarkanie lāzeri priekšā
+          Platāks skats — redzi arī bomzi ar nūju aiz muguras; vari apstāties (
+          <kbd>S</kbd> / <kbd>↓</kbd> vai «Stāvēt»). Šķēršļi un lāzeri priekšā
         </p>
       </div>
 
@@ -60,17 +73,36 @@ export default function BomzisChasePage() {
         <div className="bomzischase-playfield">
           <BomzisChaseGame onHud={onHud} onGameOver={onGameOver} />
           {touchUi && (
-            <button
-              type="button"
-              className="bomzischase-jump-btn"
-              aria-label="Lēkt"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                fireJump();
-              }}
-            >
-              Lēkt
-            </button>
+            <div className="bomzischase-touch-controls">
+              <button
+                type="button"
+                className="bomzischase-brake-btn"
+                aria-label="Stāvēt — turēt, lai apstātos"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  fireBrakeDown();
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault();
+                  fireBrakeUp();
+                }}
+                onPointerCancel={() => fireBrakeUp()}
+                onPointerLeave={() => fireBrakeUp()}
+              >
+                Stāvēt
+              </button>
+              <button
+                type="button"
+                className="bomzischase-jump-btn"
+                aria-label="Lēkt"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  fireJump();
+                }}
+              >
+                Lēkt
+              </button>
+            </div>
           )}
         </div>
         <div className="bomzischase-hud">
@@ -79,6 +111,9 @@ export default function BomzisChasePage() {
           </span>
           <span>
             Attālums līdz bomzim: ~<strong>{hud.gap}</strong> m
+            {hud.braking && (
+              <span className="bomzischase-braking-tag"> · stāvi</span>
+            )}
           </span>
           {gameOver && (
             <span className="bomzischase-gameover">
@@ -88,7 +123,8 @@ export default function BomzisChasePage() {
                 </>
               ) : (
                 <>
-                  Bomzis noķēra! Punkti: {gameOver.score}.{' '}
+                  Bomzis iesita vai noķēra — jāsāk no jauna. Punkti:{' '}
+                  {gameOver.score}.{' '}
                 </>
               )}
               <button
@@ -107,19 +143,19 @@ export default function BomzisChasePage() {
         <p>
           {touchUi ? (
             <>
-              Pieskaršanās pa spēles lauku vai poga{' '}
-              <span className="bomzischase-help-strong">«Lēkt»</span> apakšā —
-              leciet; zemie klucīši — trieciens pietuvina bomzi;{' '}
-              <span className="bomzischase-help-strong">saskare ar lāzeru</span> — uzreiz
-              no sākuma. Bomzis ar nūju dzenas pa pēdām.
+              «<span className="bomzischase-help-strong">Stāvēt</span>» turēt — apstāties,
+              «<span className="bomzischase-help-strong">Lēkt</span>» — leciens. Zemie
+              klucīši — trieciens; <span className="bomzischase-help-strong">lāzers</span>{' '}
+              vai <span className="bomzischase-help-strong">bomzis noķer</span> — no
+              jauna. Bomzis redzams kadrā.
             </>
           ) : (
             <>
-              <kbd>Space</kbd> vai <kbd>↑</kbd> — lēkt · skārienekrānā pieskaries
-              laukumam. Zemie klucīši — trieciens pietuvina bomzi;{' '}
-              <span className="bomzischase-help-strong">lāzers</span>, ja pieskaras
-              starojumam zem lēciena augstuma, beidz spēli — jāsāk no sākuma. Bomzis ar
-              nūju dzenas pa pēdām.
+              <kbd>Space</kbd> / <kbd>↑</kbd> — lēkt · <kbd>S</kbd> / <kbd>↓</kbd> turēt —
+              apstāties (bomzis tuvojas). Zemie klucīši — trieciens;{' '}
+              <span className="bomzischase-help-strong">lāzers</span> vai{' '}
+              <span className="bomzischase-help-strong">bomzis ķer klāt</span> —
+              spēle no jauna. Platāks skats rāda bomzi.
             </>
           )}
         </p>

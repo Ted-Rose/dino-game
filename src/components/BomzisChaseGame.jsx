@@ -5,17 +5,20 @@ const RUN_SPEED = 15;
 const GRAVITY = 42;
 const JUMP_V = 13;
 const CHASE_SAFE = 11;
-/** Kamera — nedaudz no sāna un muguras, lai redzētu dzenošo bomzi */
-const CAM_DIST_BACK = 8.2;
-const CAM_SIDE_X = 2.85;
+/** Kamera — platāks kadrs un vērstā pret bomzi, lai abi iekrājas skatā */
+const CAM_DIST_BACK = 9.6;
+const CAM_SIDE_X = 4.1;
+const LOOK_BOMZI_MIX = 0.42;
 const HURDLE_GAP_MIN = 6.6;
 const HURDLE_GAP_MAX = 8.1;
 const LASER_CHANCE = 0.38;
-const CATCH_DIST = 2.2;
+/** Drošības attālums, ja lodziņu sadursme izlaiž kadru */
+const CATCH_DIST = 2.45;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
 
 export const BOMZISCHASE_JUMP_EVENT = 'bomzischase:jump';
+export const BOMZISCHASE_BRAKE_EVENT = 'bomzischase:brake';
 
 /** Roblox-style blocky avatar (R6-ish): head, torso, arms, legs — feet at y=0 */
 function makeRobloxPlayerMesh() {
@@ -139,7 +142,7 @@ function makeBomziMesh() {
   stick.castShadow = true;
   g.add(stick);
 
-  g.scale.setScalar(1.22);
+  g.scale.setScalar(1.42);
   g.userData = { stick };
   return g;
 }
@@ -165,8 +168,8 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     scene.background = new THREE.Color(0xb8c4d8);
     scene.fog = new THREE.Fog(0xb8c4d8, 35, 145);
 
-    const camera = new THREE.PerspectiveCamera(60, 1, 0.15, 220);
-    camera.position.set(CAM_SIDE_X, 5.05, 4 - CAM_DIST_BACK);
+    const camera = new THREE.PerspectiveCamera(68, 1, 0.15, 220);
+    camera.position.set(CAM_SIDE_X, 6.15, 4 - CAM_DIST_BACK);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -332,10 +335,21 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
         HURDLE_GAP_MIN + Math.random() * (HURDLE_GAP_MAX - HURDLE_GAP_MIN);
     }
 
+    const keys = { brake: false };
+
     const onKd = (e) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         wantJump = true;
         e.preventDefault();
+      }
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        keys.brake = true;
+        e.preventDefault();
+      }
+    };
+    const onKu = (e) => {
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        keys.brake = false;
       }
     };
     const onPointerJump = (e) => {
@@ -345,15 +359,22 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
     const onJumpEvent = () => {
       wantJump = true;
     };
+    const onBrakeEvent = (e) => {
+      keys.brake = Boolean(e.detail?.down);
+    };
     window.addEventListener('keydown', onKd);
+    window.addEventListener('keyup', onKu);
     wrap.addEventListener('pointerdown', onPointerJump, { passive: false });
     window.addEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
+    window.addEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
     let raf = 0;
 
     function loop() {
       if (ended) return;
       const dt = Math.min(clock.getDelta(), 0.08);
       const spd = RUN_SPEED * (stumble > 0 ? STUMBLE_SLOW : 1);
+      const brakeHeld = keys.brake;
+      const forwardSpd = brakeHeld ? 0 : spd;
 
       stumble = Math.max(0, stumble - dt);
 
@@ -367,16 +388,18 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
         vy = 0;
       }
 
-      pz += spd * dt;
-      score += spd * dt;
+      pz += forwardSpd * dt;
+      score += forwardSpd * dt;
 
       player.position.set(px, py, pz);
 
-      runAnimT += dt * spd * 0.38;
+      runAnimT += dt * (forwardSpd > 0.5 ? spd : 2.5) * 0.38;
       const rig = player.userData.rig;
       if (rig) {
         const inAir = py > 0.06 || vy > 0.35;
-        const stride = stumble > 0 ? 0.22 : inAir ? 0.18 : 0.58;
+        const strideBase = stumble > 0 ? 0.22 : inAir ? 0.18 : 0.58;
+        const stride =
+          brakeHeld && !inAir ? strideBase * 0.12 : strideBase;
         const ph = runAnimT * 13;
         const s = Math.sin(ph);
         rig.legL.rotation.x = s * stride;
@@ -423,8 +446,22 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       camera.position.x +=
         (px + CAM_SIDE_X - camera.position.x) * Math.min(1, 8 * dt);
       camera.position.z = pz - CAM_DIST_BACK;
-      camera.position.y = 5.05 + py * 0.36;
-      camera.lookAt(px - 0.5, py + 1.15, pz + 30);
+      camera.position.y = 6.15 + py * 0.34;
+      {
+        const aheadZ = pz + 22;
+        const tx = THREE.MathUtils.lerp(
+          px - 0.55,
+          bomzi.position.x,
+          LOOK_BOMZI_MIX,
+        );
+        const ty = THREE.MathUtils.lerp(py + 1.12, py + 1.55, LOOK_BOMZI_MIX);
+        const tz = THREE.MathUtils.lerp(
+          aheadZ,
+          bomzi.position.z + 2.5,
+          LOOK_BOMZI_MIX * 0.92,
+        );
+        camera.lookAt(tx, ty, tz);
+      }
 
       player.updateMatrixWorld(true);
       const playerBox = new THREE.Box3().setFromObject(player);
@@ -474,6 +511,21 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
         }
       }
 
+      bomzi.updateMatrixWorld(true);
+      const bomziBox = new THREE.Box3().setFromObject(bomzi);
+      if (playerBox.intersectsBox(bomziBox)) {
+        if (!ended) {
+          ended = true;
+          endCb.current?.({
+            score: Math.floor(score),
+            caught: true,
+            hit: true,
+          });
+        }
+        renderer.render(scene, camera);
+        return;
+      }
+
       while (
         obstacles.length === 0 ||
         obstacles[obstacles.length - 1].z < pz + 60
@@ -490,12 +542,17 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       hudCb.current?.({
         score: Math.floor(score),
         gap: Math.max(0, Math.round(distCatch * 10) / 10),
+        braking: brakeHeld,
       });
 
       if (distCatch < CATCH_DIST) {
         if (!ended) {
           ended = true;
-          endCb.current?.({ score: Math.floor(score), caught: true });
+          endCb.current?.({
+            score: Math.floor(score),
+            caught: true,
+            hit: true,
+          });
         }
         renderer.render(scene, camera);
         return;
@@ -512,10 +569,12 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', fit);
       window.removeEventListener('keydown', onKd);
+      window.removeEventListener('keyup', onKu);
       wrap.removeEventListener('pointerdown', onPointerJump, {
         passive: false,
       });
       window.removeEventListener(BOMZISCHASE_JUMP_EVENT, onJumpEvent);
+      window.removeEventListener(BOMZISCHASE_BRAKE_EVENT, onBrakeEvent);
       renderer.dispose();
       if (renderer.domElement.parentNode === wrap) {
         wrap.removeChild(renderer.domElement);
