@@ -1,0 +1,17 @@
+---
+description: Pēc katra pabeigta lietotāja lūgtā uzdevuma veikt git commit un push uz GitHub.
+alwaysApply: true
+---
+
+# Git commit un push pēc uzdevumiem
+
+Pēc **katra** lietotāja pieprasītā darba pabeigšanas (kad izmaiņas ir gatavas un saprotamas vienā loģiskā vienībā):
+
+1. **Pārbaudi** `git status` — iekļauj tikai failus, kas attiecas uz šo uzdevumu.
+2. **`git add`** — pievieno attiecīgos failus (vai saprātīgu kopumu).
+3. **`git commit`** — īss, skaidrs ziņojums latviešu vai angļu valodā (piemēram: `feat: add forest 99 page` vai `Labot canvas izmēru melnajam ekrānam`).
+4. **`git push`** uz noklusējuma attālinātā (`origin`) un aktīvās zara (parasti `main`).
+
+**Necommitē** `.env`, API atslēgas vai citus sensitīvus failus. Ja `push` neizdodas autentifikācijas dēļ, paskaidro lietotājam un nemēģini publicēt privātus datus.
+
+Ja uzdevums ir tikai kļūdas labojums bez jaunām funkcijām, commit ziņojumā norādi, kas tika salabots.

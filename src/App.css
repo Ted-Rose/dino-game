@@ -369,3 +369,166 @@
   box-shadow: 0 1px 0 #bbb;
   margin: 0 2px;
 }
+
+/* --- 99 naktis mežā (Three.js) --- */
+
+.page-forest99 {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+  background: #0d1520;
+}
+
+.forest99-canvas-wrap {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: clamp(300px, 58dvh, 760px);
+  cursor: crosshair;
+}
+
+.page-forest99 canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.forest99-hud {
+  pointer-events: none;
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: flex-start;
+  z-index: 20;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.forest99-hud__block {
+  background: rgba(8, 12, 18, 0.72);
+  border: 1px solid rgba(120, 160, 200, 0.28);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 120px;
+}
+
+.forest99-hud__block--wide {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.forest99-hud__label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(200, 220, 245, 0.75);
+  margin-bottom: 4px;
+}
+
+.forest99-hud__value {
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e8f4ff;
+}
+
+.forest99-hud__bar {
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.forest99-hud__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3d8c4a, #7bc96a);
+  border-radius: 6px;
+  transition: width 0.15s ease;
+}
+
+.forest99-hud__hint {
+  width: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 220, 190, 0.95);
+}
+
+.forest99-help {
+  margin: 0;
+  padding: 8px 16px 14px;
+  font-size: 12px;
+  color: rgba(180, 200, 220, 0.75);
+  text-align: center;
+  background: #05080c;
+  border-top: 1px solid rgba(80, 100, 120, 0.35);
+}
+
+.forest99-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.forest99-modal__card {
+  max-width: 420px;
+  padding: 28px 24px;
+  border-radius: 14px;
+  background: linear-gradient(165deg, #142018 0%, #0a1014 100%);
+  border: 1px solid rgba(100, 140, 110, 0.45);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.forest99-modal__card--lose {
+  border-color: rgba(140, 70, 90, 0.55);
+}
+
+.forest99-modal__card h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #e8f5eb;
+}
+
+.forest99-modal__card p {
+  margin: 0 0 22px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: rgba(210, 225, 215, 0.88);
+}
+
+.forest99-modal__btn {
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0e1812;
+  background: linear-gradient(180deg, #9fd4a8 0%, #5fa86d 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.forest99-modal__btn:hover {
+  filter: brightness(1.06);
+}
+
+.forest99-modal__card--lose .forest99-modal__btn {
+  background: linear-gradient(180deg, #e8b8c8 0%, #b86888 100%);
+}
