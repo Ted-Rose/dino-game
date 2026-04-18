@@ -6,7 +6,6 @@ const DAY_SEC = 32;
 const NIGHT_SEC = 26;
 const WORLD_HALF = 48;
 const FIRE_SAFE_R = 7;
-const COLD_START_R = 22;
 const PLAYER_H = 1.45;
 const PLAYER_R = 0.45;
 const CHOP_RANGE = 3.4;
@@ -231,48 +230,9 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     let survivedNights = 0;
     let isDay = true;
     let phaseLeft = DAY_SEC;
-    let hp = 100;
     let wood = 0;
-    /** @type {{ mesh: THREE.Group; speed: number; kind: 'shadow' | 'animal' }[]} */
+    /** @type {{ mesh: THREE.Group; speed: number }[]} */
     let enemies = [];
-
-    function spawnShadowEnemy() {
-      const angle = rand() * Math.PI * 2;
-      const dist = 35 + rand() * 12;
-      const group = new THREE.Group();
-      group.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
-
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.85, 1.35, 0.55),
-        new THREE.MeshStandardMaterial({
-          color: 0x151018,
-          roughness: 0.9,
-          emissive: 0x220011,
-          emissiveIntensity: 0.25,
-        })
-      );
-      body.position.y = 0.85;
-      body.castShadow = true;
-
-      const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.65, 0.55, 0.55),
-        new THREE.MeshStandardMaterial({
-          color: 0x1a1018,
-          emissive: 0xff0044,
-          emissiveIntensity: 0.9,
-        })
-      );
-      head.position.y = 1.75;
-      head.castShadow = true;
-
-      group.add(body, head);
-      scene.add(group);
-      enemies.push({
-        mesh: group,
-        speed: 2.45 + survivedNights * 0.055 + rand() * 0.75,
-        kind: 'shadow',
-      });
-    }
 
     function spawnAnimalEnemy() {
       const angle = rand() * Math.PI * 2;
@@ -312,7 +272,6 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       enemies.push({
         mesh: group,
         speed: 3.1 + survivedNights * 0.07 + rand() * 0.9,
-        kind: 'animal',
       });
     }
 
@@ -325,11 +284,6 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
       clearEnemies();
       const animalCount = Math.min(2 + Math.floor(survivedNights / 3), 14);
       for (let i = 0; i < animalCount; i++) spawnAnimalEnemy();
-
-      if (isDay) {
-        const shadowCount = Math.min(2 + Math.floor(survivedNights / 5), 11);
-        for (let i = 0; i < shadowCount; i++) spawnShadowEnemy();
-      }
     }
 
     function applyDayNightVisuals() {
@@ -421,9 +375,6 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
         nightGoal: NIGHT_GOAL,
         phaseLeft: Math.max(0, phaseLeft),
         phaseLen,
-        hp: Math.max(0, Math.round(hp)),
-        nearFire: distFire < FIRE_SAFE_R,
-        cold: isDay && distFire > COLD_START_R,
         wood,
         fireFuel: Math.round(fireFuel),
         canChop: trees.length > 0,
@@ -441,7 +392,6 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
     }
 
     let last = performance.now();
-    let damageCd = 0;
     let raf = 0;
     let active = true;
 
@@ -515,33 +465,15 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
           }
           isDay = true;
           phaseLeft = DAY_SEC;
-          hp = Math.min(100, hp + 10);
           applyDayNightVisuals();
           spawnEnemiesForCurrentPhase();
         }
       }
 
-      const distFire = Math.hypot(player.position.x, player.position.z);
-
       const decay = isDay ? 0.55 : 0.95;
       fireFuel = Math.max(5, fireFuel - decay * dt);
 
       fireLight.distance = 28 + fireFuel * 0.12;
-
-      if (isDay && distFire > COLD_START_R) {
-        hp -= 6.5 * dt;
-      }
-      if (distFire < FIRE_SAFE_R) {
-        hp += (isDay ? 3.2 : 4.5) * dt * (0.7 + fireFuel / 130);
-      }
-      hp = Math.min(100, hp);
-
-      if (hp <= 0) {
-        endGame(false);
-        return;
-      }
-
-      damageCd = Math.max(0, damageCd - dt);
 
       const pulse = Math.sin(now * 0.008) * 0.08 + 1;
       const fuelMul = 0.45 + (fireFuel / 100) * 0.85;
@@ -575,11 +507,6 @@ export default function Forest99Game({ onHudUpdate, onGameEnd }) {
         lookTarget.set(px, mesh.position.y, pz);
         mesh.lookAt(lookTarget);
 
-        const hit = Math.hypot(mesh.position.x - px, mesh.position.z - pz);
-        if (hit < 1.35 && damageCd <= 0) {
-          hp -= en.kind === 'animal' ? 18 : 20;
-          damageCd = 0.62;
-        }
       });
 
       const phaseLen = isDay ? DAY_SEC : NIGHT_SEC;

@@ -17,9 +17,6 @@ export default function Forest99Page() {
     nightGoal: 99,
     phaseLeft: 32,
     phaseLen: 32,
-    hp: 100,
-    nearFire: false,
-    cold: false,
     wood: 0,
     fireFuel: 72,
     canChop: true,
@@ -27,7 +24,7 @@ export default function Forest99Page() {
   });
 
   const handleHud = useCallback((next) => setHud(next), []);
-  const handleEnd = useCallback((won) => setEnd(won ? 'win' : 'lose'), []);
+  const handleEnd = useCallback(() => setEnd('win'), []);
 
   const restart = () => {
     setEnd(null);
@@ -57,23 +54,12 @@ export default function Forest99Page() {
           <span className="forest99-hud__label">Malka</span>
           <span className="forest99-hud__value">{hud.wood}</span>
         </div>
-        <div className="forest99-hud__block">
+        <div className="forest99-hud__block forest99-hud__block--wide">
           <span className="forest99-hud__label">Ugunskurs</span>
           <div className="forest99-hud__bar forest99-hud__bar--fire" role="meter" aria-valuenow={hud.fireFuel} aria-valuemin={0} aria-valuemax={100}>
             <div className="forest99-hud__bar-fill forest99-hud__bar-fill--fire" style={{ width: `${hud.fireFuel}%` }} />
           </div>
         </div>
-        <div className="forest99-hud__block forest99-hud__block--wide">
-          <span className="forest99-hud__label">Veselība</span>
-          <div className="forest99-hud__bar" role="meter" aria-valuenow={hud.hp} aria-valuemin={0} aria-valuemax={100}>
-            <div className="forest99-hud__bar-fill" style={{ width: `${hud.hp}%` }} />
-          </div>
-        </div>
-        {(hud.cold || hud.nearFire) && (
-          <p className="forest99-hud__hint">
-            {hud.nearFire ? 'Ugunskura siltums…' : 'Tālu no ugunskura — zemā temperatūra (tikai dienā)!'}
-          </p>
-        )}
         {hud.canFeedFire && (
           <p className="forest99-hud__hint forest99-hud__hint--action">
             F — iemest malku ugunī
@@ -82,7 +68,7 @@ export default function Forest99Page() {
       </div>
 
       <p className="forest99-help">
-        WASD — kustība · Shift — skriet · E — cirst koku · F — malku ugunskurā · Peles skats · Esc — atbrīvot peli · Ēnas tikai dienā; zvēri arī naktī
+        WASD — kustība · Shift — skriet · E — cirst koku · F — malku ugunskurā · Peles skats · Esc — atbrīvot peli · Meža zvēri medī, bet neapdraud
       </p>
 
       {end === 'win' && (
@@ -92,18 +78,6 @@ export default function Forest99Page() {
             <p>Mežs tevi vairs nepieskaras.</p>
             <button type="button" className="forest99-modal__btn" onClick={restart}>
               Spēlēt vēlreiz
-            </button>
-          </div>
-        </div>
-      )}
-
-      {end === 'lose' && (
-        <div className="forest99-modal" role="dialog" aria-labelledby="forest99-lose-title">
-          <div className="forest99-modal__card forest99-modal__card--lose">
-            <h2 id="forest99-lose-title">Gājiens beidzies.</h2>
-            <p>Lieto ugunskuru, cirp kokus un izvairies no zvēriem un dienas ēnām.</p>
-            <button type="button" className="forest99-modal__btn" onClick={restart}>
-              Mēģināt atkārtoti
             </button>
           </div>
         </div>
