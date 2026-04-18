@@ -13,7 +13,10 @@ const HURDLE_GAP_MIN = 11.8;
 const HURDLE_GAP_MAX = 14.5;
 const LASER_CHANCE = 0.38;
 /** Drošības attālums, ja lodziņu sadursme izlaiž kadru */
-const CATCH_DIST = 2.45;
+/** Ja lodziņi izlaiž kadru — joprojām «noķer» */
+const CATCH_DIST = 2.85;
+/** Nūjas trieciena paplašinājums (laipnīgāk trāpa) */
+const STICK_HIT_PAD = 0.48;
 const STUMBLE_TIME = 1.15;
 const STUMBLE_SLOW = 0.22;
 
@@ -143,7 +146,7 @@ function makeBomziMesh() {
   g.add(stick);
 
   g.scale.setScalar(1.42);
-  g.userData = { stick };
+  g.userData = { stick, coat, head };
   return g;
 }
 
@@ -425,22 +428,31 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
 
       const targetGap = stumble > 0 ? 4 : CHASE_SAFE;
       const targetBz = pz - targetGap;
+      const gapBefore = pz - bomzi.position.z;
+      const rush =
+        gapBefore < 9 ? 1 + ((9 - gapBefore) / 9) * 0.95 : 1;
       bomzi.position.z = THREE.MathUtils.lerp(
         bomzi.position.z,
         targetBz,
-        Math.min(1, (stumble > 0 ? 6 : 2.5) * dt),
+        Math.min(1, (stumble > 0 ? 6 : 2.85) * rush * dt),
       );
       bomzi.position.x = THREE.MathUtils.lerp(bomzi.position.x, 0, Math.min(1, 10 * dt));
       bomzi.position.y = 0;
       bomzi.lookAt(px, py + 0.95, pz + 4);
 
       const bu = bomzi.userData;
+      const gapNow = pz - bomzi.position.z;
+      const close01 = THREE.MathUtils.clamp((10 - gapNow) / 10, 0, 1);
       if (bu?.stick) {
-        bu.swingT = (bu.swingT || 0) + dt * 11;
+        bu.swingT = (bu.swingT || 0) + dt * (12 + close01 * 18);
+        const swingAmp = 0.1 + close01 * 1.15;
         bu.stick.rotation.x =
-          Math.PI / 11 + Math.sin(bu.swingT) * 0.09;
+          Math.PI / 11 +
+          Math.sin(bu.swingT) * swingAmp +
+          close01 * 0.62;
         bu.stick.rotation.z =
-          Math.PI / 4.2 + Math.sin(bu.swingT * 0.7) * 0.06;
+          Math.PI / 4.2 +
+          Math.sin(bu.swingT * 0.65) * (0.06 + close01 * 0.35);
       }
 
       camera.position.x +=
@@ -512,14 +524,32 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
       }
 
       bomzi.updateMatrixWorld(true);
-      const bomziBox = new THREE.Box3().setFromObject(bomzi);
-      if (playerBox.intersectsBox(bomziBox)) {
+      const ud = bomzi.userData;
+      let bomziConnected = false;
+      if (ud?.stick) {
+        ud.stick.updateMatrixWorld(true);
+        const stickBox = new THREE.Box3()
+          .setFromObject(ud.stick)
+          .expandByScalar(STICK_HIT_PAD);
+        if (playerBox.intersectsBox(stickBox)) bomziConnected = true;
+      }
+      if (!bomziConnected && ud?.coat) {
+        ud.coat.updateMatrixWorld(true);
+        if (playerBox.intersectsBox(new THREE.Box3().setFromObject(ud.coat)))
+          bomziConnected = true;
+      }
+      if (!bomziConnected && ud?.head) {
+        ud.head.updateMatrixWorld(true);
+        if (playerBox.intersectsBox(new THREE.Box3().setFromObject(ud.head)))
+          bomziConnected = true;
+      }
+      if (bomziConnected) {
         if (!ended) {
           ended = true;
           endCb.current?.({
             score: Math.floor(score),
             caught: true,
-            hit: true,
+            hitByBomzi: true,
           });
         }
         renderer.render(scene, camera);
@@ -551,7 +581,7 @@ export default function BomzisChaseGame({ onHud, onGameOver }) {
           endCb.current?.({
             score: Math.floor(score),
             caught: true,
-            hit: true,
+            hitByBomzi: true,
           });
         }
         renderer.render(scene, camera);

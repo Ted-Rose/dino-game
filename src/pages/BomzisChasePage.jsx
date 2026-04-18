@@ -124,7 +124,7 @@ export default function BomzisChasePage() {
                 </>
               ) : (
                 <>
-                  Bomzis tevi nosita — esi miris, jāsāk no jauna. Punkti:{' '}
+                  Bomzis tevi sita ar nūju — spēle no jauna. Punkti:{' '}
                   {gameOver.score}.{' '}
                 </>
               )}
